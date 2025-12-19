@@ -30,6 +30,7 @@ casino-platform-poc/
 │   │   │   ├── useWalletAuth.ts  ✅
 │   │   ├── pages/
 │   │   │   ├── _app.tsx  ✅
+│   │   │   ├── admin.tsx  ✅ /mais recente/
 │   │   │   ├── index.tsx  ✅
 │   │   │   ├── coinflip.tsx  ✅
 │   │   │   ├── dice.tsx  ✅
@@ -68,7 +69,7 @@ casino-platform-poc/
 │   │   │   │   └── payout.controller.ts
 │   │   │   └── admin/
 │   │   │       ├── emergency.controller.ts ✅
-│   │   │       └── bankroll.controller.ts
+│   │   │       └── bankroll.controller.ts ✅
 │   │   ├── games/
 │   │   │   ├── coinflip.service.ts ✅
 │   │   │   ├── dice.service.ts ✅

@@ -3,7 +3,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useCasinoStore } from '../state/casinoStore';
 import { toast } from 'react-hot-toast';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export const useWalletAuth = () => {
   const { publicKey, connected } = useWallet();

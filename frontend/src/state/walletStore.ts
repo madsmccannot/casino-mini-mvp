@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { useCasinoStore } from './casinoStore';
 
 // GARANTE QUE A PORTA É 3001 (A mesma do server.ts)
-const API_URL = 'http://localhost:3001/api'; 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 interface WalletState {
   address: string | null;
