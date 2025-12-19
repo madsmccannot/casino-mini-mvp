@@ -27,10 +27,11 @@ const CoinflipPage: NextPage = () => {
       // 2. Atualizar o saldo global
       setBalance(data.newBalance);
 
-      // 3. Retornar o resultado para a UI
+      // 3. Retornar o resultado para a UI (FORMATO CORRIGIDO)
       return {
         win: data.payout > 0,
-        outcome: data.result.outcome // 'heads' ou 'tails'
+        result: data.result.outcome, // 'heads' ou 'tails'
+        payout: data.payout
       };
 
     } catch (error: any) {

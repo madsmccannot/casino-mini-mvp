@@ -13,17 +13,17 @@ export interface GameResult {
 
 // Interface for Global State
 interface CasinoState {
-  balance: number;       // Real SOL Balance
-  solPrice: number;      // USD Price (Simulated)
+  balance: number;       // Saldo em SOL
+  solPrice: number;      // Preço simulado ou real (via Oracle)
   isSoundEnabled: boolean;
-  isAuthenticated: boolean; // <--- NOVO: Estado de autenticação
+  isAuthenticated: boolean; // Estado de login
   recentGames: GameResult[];
   
   // Actions
   setBalance: (amount: number) => void;
   addToBalance: (amount: number) => void;
   toggleSound: () => void;
-  setAuthenticated: (status: boolean) => void; // <--- NOVO: Ação para mudar o estado
+  setAuthenticated: (status: boolean) => void;
   addGameResult: (result: Omit<GameResult, 'id' | 'timestamp'>) => void;
   
   // Helpers
@@ -32,10 +32,10 @@ interface CasinoState {
 }
 
 export const useCasinoStore = create<CasinoState>((set, get) => ({
-  balance: 0,       // Starts at 0 until wallet connects
-  solPrice: 150,    // Fixed simulated price
+  balance: 0,        // Starts at 0 until wallet connects
+  solPrice: 150,     // Fixed simulated price (or fetch from Oracle in future)
   isSoundEnabled: true,
-  isAuthenticated: false, // <--- NOVO: Começa como falso
+  isAuthenticated: false,
   recentGames: [],
 
   setBalance: (amount) => set({ balance: amount }),
@@ -48,7 +48,6 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
     isSoundEnabled: !state.isSoundEnabled 
   })),
 
-  // <--- NOVO: Função para atualizar a autenticação
   setAuthenticated: (status) => set({ isAuthenticated: status }),
 
   addGameResult: (result) => set((state) => ({
@@ -59,9 +58,10 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
           timestamp: new Date() 
         }, 
         ...state.recentGames
-    ].slice(0, 10)
+    ].slice(0, 10) // Mantém apenas os últimos 10
   })),
 
+  // Formata o valor para exibição (ex: 0.5000 SOL ou $75.00)
   getDisplayValue: (amountInSol, inUsd) => {
     if (inUsd) {
       return `$${(amountInSol * get().solPrice).toFixed(2)}`;
@@ -69,6 +69,7 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
     return `${amountInSol.toFixed(4)} SOL`;
   },
 
+  // Converte input de aposta para SOL
   getBetAmountInSol: (inputValue, isUsdInput) => {
     if (!isUsdInput) return inputValue;
     return inputValue / get().solPrice;

@@ -23,7 +23,7 @@ const RoulettePage: NextPage = () => {
     }
 
     try {
-        const params = { color: betType }; // Adapte se a sua UI enviar números específicos
+        const params = { color: betType }; 
 
         const data = await api.placeBet('roulette', amount, params);
         
@@ -31,7 +31,7 @@ const RoulettePage: NextPage = () => {
 
         return {
             win: data.payout > 0,
-            resultNumber: data.result.outcome, // Backend deve retornar o número (0-36)
+            resultNumber: data.result.outcome, // Backend retorna número 0-36
             payout: data.payout
         };
 

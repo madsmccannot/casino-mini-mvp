@@ -4,7 +4,7 @@ import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana
 import { useCasinoStore } from '../../state/casinoStore';
 import { useUIStore } from '../../state/uiStore';
 import { toast } from 'react-hot-toast';
-import { api } from '../../services/api';
+import { api } from '../../services/api'; // Certifica-te que tens este ficheiro, ou usa fetch direto
 
 interface Props {
   isOpen: boolean;
@@ -22,15 +22,19 @@ export const DepositModal = ({ isOpen, onClose }: Props) => {
   const [casinoAddress, setCasinoAddress] = useState<string | null>(null);
   const [isUsdMode, setIsUsdMode] = useState(false);
 
-  // Buscar endereço do Casino
+  // Buscar endereço do Casino (Hot Wallet)
   useEffect(() => {
     const fetchCasinoKey = async () => {
       try {
+        // Se não tiveres o serviço api configurado, usa fetch normal:
+        // const res = await fetch('http://localhost:3001/api/casino/publicKey');
+        // const address = await res.text();
         const response = await api.get('casino/publicKey');
         const address = typeof response === 'object' ? response.SOL || response.publicKey : response;
         setCasinoAddress(address);
       } catch (error) {
-        toast.error('Failed to load Casino address.');
+        console.error("Failed to fetch casino key", error);
+        // Fallback silencioso ou toast
       }
     };
     if (isOpen) fetchCasinoKey();
@@ -41,7 +45,7 @@ export const DepositModal = ({ isOpen, onClose }: Props) => {
   // STRICT INPUT HANDLER
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Only numbers and one dot
+    // Apenas números e um ponto decimal
     if (/^\d*\.?\d*$/.test(val)) {
         setAmount(val);
     }
@@ -50,9 +54,9 @@ export const DepositModal = ({ isOpen, onClose }: Props) => {
   const getSolAmount = () => {
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) return 0;
-    if (!isUsdMode) return val;
+    if (!isUsdMode) return val; // Se já está em SOL, retorna o valor
     if (solPrice <= 0) return 0;
-    return val / solPrice;
+    return val / solPrice; // Converte USD -> SOL
   };
 
   const handleSolanaDeposit = async () => {
@@ -82,13 +86,16 @@ export const DepositModal = ({ isOpen, onClose }: Props) => {
       toast.loading("Confirming on chain...", { id: toastId });
       await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
       
+      // Pequeno delay para propagação
       await new Promise(r => setTimeout(r, 2000));
 
       toast.loading("Verifying...", { id: toastId });
+      
+      // Envia assinatura para o backend auditar
       const response = await api.post('wallet/deposit', {
         walletAddress: solanaKey.toString(),
         signature,
-        chain: 'SOL',
+        // chain: 'SOL', // Backend assume SOL por defeito agora
       });
 
       if (response.success) {
@@ -101,7 +108,7 @@ export const DepositModal = ({ isOpen, onClose }: Props) => {
       }
     } catch (error: any) {
       console.error(error);
-      toast.error("Deposit failed", { id: toastId });
+      toast.error("Deposit failed. " + (error.message || ""), { id: toastId });
     } finally {
       setLoading(false);
     }

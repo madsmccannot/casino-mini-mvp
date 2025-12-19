@@ -1,8 +1,19 @@
-import * as crypto from 'crypto';
+// NOTA: Usamos a API nativa do browser (window.crypto), não importamos 'crypto' do Node.
 
-// Replicamos a lógica SHA256 do backend
-const sha256 = (data: string): string => {
-    return crypto.createHash('sha256').update(data).digest('hex');
+// Função SHA256 compatível com Navegador (Async)
+const sha256 = async (data: string): Promise<string> => {
+    // Codifica a string para bytes
+    const msgBuffer = new TextEncoder().encode(data);
+    
+    // CORREÇÃO: Adicionado 'as any' para resolver o erro TS2769.
+    // O TypeScript confunde-se com SharedArrayBuffer, mas o TextEncoder produz um ArrayBuffer seguro.
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer as any);
+    
+    // Converte ArrayBuffer para string Hex
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex;
 };
 
 const MAX_ROLL_VALUE = 10000;
@@ -10,13 +21,13 @@ const MAX_UINT32 = 0xFFFFFFFF; // 4294967295
 
 /**
  * Gera o resultado final com base nas provas do servidor.
- * Esta função deve ser idêntica à lógica generateResult no backend (commitReveal.ts)
+ * Agora é ASYNC porque usa a Web Crypto API.
  */
-const generateResult = (serverSeed: string, clientSeed: string, nonce: number): number => {
+const generateResult = async (serverSeed: string, clientSeed: string, nonce: number): Promise<number> => {
     const hashString = `${serverSeed}:${clientSeed}:${nonce}`;
-    const finalHash = sha256(hashString);
+    const finalHash = await sha256(hashString);
     
-    // Usar apenas os primeiros 8 bytes (32 bits)
+    // Usar apenas os primeiros 8 bytes (16 caracteres hex)
     const subHash = finalHash.substring(0, 8); 
     const decimalValue = parseInt(subHash, 16);
     
@@ -33,51 +44,44 @@ interface Proof {
     nonce: number;
     expectedResult: number;
     commitHash: string;
-    nextCommitHash: string; // O commit hash do próximo jogo
+    nextCommitHash?: string; // Opcional
 }
 
 export const rngClient = {
     
     /**
-     * Função principal para verificar a justiça do resultado.
-     * @param proof Os dados de prova recebidos do backend.
-     * @returns {isFair: boolean, calculatedResult: number}
+     * Verifica a justiça do resultado.
+     * @returns Promise<{isFair: boolean, calculatedResult: number}>
      */
-    verifyResult: (proof: Proof) => {
+    verifyResult: async (proof: Proof) => {
         
-        // 1. Recalcular o resultado localmente
-        const calculatedResult = generateResult(
+        // 1. Recalcular o resultado localmente (Async)
+        const calculatedResult = await generateResult(
             proof.serverSeed, 
             proof.clientSeed, 
             proof.nonce
         );
         
-        // 2. Verificar se o resultado calculado corresponde ao resultado esperado
-        const isResultFair = calculatedResult === proof.expectedResult;
+        // 2. Comparar (Pequena margem para erros de float, ou igualdade estrita)
+        // Usamos toFixed(2) para garantir comparação justa com o backend
+        const isResultFair = calculatedResult.toFixed(2) === proof.expectedResult.toFixed(2);
         
-        // 3. (Opcional, mas recomendado) Verificar o COMPROMISSO do próximo jogo
-        // O hash da semente do próximo jogo (nextCommitHash) deve ser o SHA256 da semente atual.
-        const calculatedNextCommitHash = sha256(proof.serverSeed);
-        const isNextCommitValid = calculatedNextCommitHash === proof.commitHash;
+        // 3. Verificar se o ServerSeed bate certo com o Hash (Commit) anterior
+        const calculatedCommitHash = await sha256(proof.serverSeed);
+        const isCommitValid = calculatedCommitHash === proof.commitHash;
 
         return {
-            isFair: isResultFair,
+            isFair: isResultFair && isCommitValid,
             calculatedResult: calculatedResult,
-            isNextCommitValid: isNextCommitValid
+            isCommitValid: isCommitValid
         };
     },
 
     /**
-     * Função para o cliente gerar a sua própria semente (se for necessário)
+     * Gera uma semente do cliente aleatória
      */
     generateClientSeed: (): string => {
-        return sha256(Math.random().toString() + Date.now() + 'client_salt');
-    },
-
-    /**
-     * Função para verificar se a semente do servidor foi comprometida antes do jogo.
-     */
-    verifyCommit: (serverSeed: string, commitHash: string): boolean => {
-        return sha256(serverSeed) === commitHash;
+        // Math.random é suficiente para client seed, mas podemos adicionar entropia
+        return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
     }
 };

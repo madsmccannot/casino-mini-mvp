@@ -18,20 +18,18 @@ interface PlinkoUIProps {
   getMultipliers: (rows: number, risk: string) => number[];
 }
 
-// --- COMPONENTE BOLA INDIVIDUAL (Animação) ---
-// NOTA: Para funcionar 100%, os valores BOARD_HEIGHT e MAX_WIDTH_SPREAD
-// devem ser ajustados para corresponderem exatamente ao tamanho do teu contentor.
+// --- COMPONENTE BOLA (Física Simulada) ---
 const Ball = ({ data, onFinish, rows }: { data: VisualBall, onFinish: () => void, rows: number }) => {
   const [pos, setPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     let startTime = Date.now();
-    const durationPerRow = 200; 
+    const durationPerRow = 250; // Velocidade da queda
     const totalDuration = rows * durationPerRow;
-    // --- ESTES VALORES DEVEM CORRESPONDER AO CSS DO TABULEIRO ABAIXO ---
-    const BOARD_HEIGHT = 450; 
-    const MAX_WIDTH_SPREAD = 380; 
-    // -------------------------------------------------------------------
+    
+    // Dimensões Virtuais do Tabuleiro (Devem bater certo com o CSS)
+    const BOARD_HEIGHT = 420; 
+    const MAX_WIDTH_SPREAD = 360; 
 
     const animate = () => {
       const now = Date.now();
@@ -43,16 +41,30 @@ const Ball = ({ data, onFinish, rows }: { data: VisualBall, onFinish: () => void
         return;
       }
 
+      // Física simples (Ease Quadratic para simular gravidade)
       const easeProgress = progress * progress; 
       const currentY = easeProgress * BOARD_HEIGHT;
+      
+      // Calcular posição X baseada no caminho
+      // Se path=[0,1,0], na linha 2 (index 1) a bola foi para a direita
       const currentRowIndex = Math.floor(progress * rows);
+      
+      // Quantas vezes foi para a direita até agora?
       const movesRight = data.path.slice(0, currentRowIndex + 1).filter(p => p === 1).length;
+      
+      // Largura da pirâmide nesta altura
       const currentSpread = (currentY / BOARD_HEIGHT) * MAX_WIDTH_SPREAD;
+      
+      // Posição normalizada (-0.5 esquerda, +0.5 direita)
+      // Evitamos divisão por zero na primeira linha
       const normalizedPos = currentRowIndex === 0 ? 0 : (movesRight / currentRowIndex) - 0.5;
       const safePos = isNaN(normalizedPos) ? 0 : normalizedPos;
 
+      // Adicionamos um pequeno "jitter" aleatório para parecer mais natural
+      const jitter = Math.sin(progress * 20) * 2;
+
       setPos({ 
-        x: safePos * currentSpread * 2, 
+        x: (safePos * currentSpread * 2) + jitter, 
         y: currentY 
       });
       
@@ -65,7 +77,7 @@ const Ball = ({ data, onFinish, rows }: { data: VisualBall, onFinish: () => void
 
   return (
     <div 
-      className="absolute w-4 h-4 rounded-full shadow-[0_0_10px_#ec4899] border-2 border-white z-20 pointer-events-none"
+      className="absolute w-3 h-3 md:w-4 md:h-4 rounded-full shadow-[0_0_10px_#ec4899] border-2 border-white z-20 pointer-events-none"
       style={{ 
         backgroundColor: '#ec4899',
         transform: `translate(calc(-50% + ${pos.x}px), ${pos.y}px)` 
@@ -87,7 +99,6 @@ export default function PlinkoUI({ balls, onAnimationComplete, onDrop, getMultip
   const theme = 'pink';
   const multipliers = getMultipliers(rows, risk);
 
-  // Opções de Risco traduzidas
   const riskOptions = [
       { value: 'Low', label: t('lbl_low') },
       { value: 'Medium', label: t('lbl_medium') },
@@ -95,30 +106,30 @@ export default function PlinkoUI({ balls, onAnimationComplete, onDrop, getMultip
   ];
 
   const handleDropClick = () => {
-     const betInSol = getBetAmountInSol(betAmount, isUsdMode);
-     if (betInSol <= 0) return toast.error(t('msg_invalid_amount'));
-     if (betInSol > balance) return toast.error(t('modal_low_balance'));
-     onDrop(rows, risk, betInSol);
+      const betInSol = getBetAmountInSol(betAmount, isUsdMode);
+      if (betInSol <= 0) return toast.error(t('msg_invalid_amount'));
+      if (betInSol > balance) return toast.error(t('modal_low_balance'));
+      
+      onDrop(rows, risk, betInSol);
   };
 
-  // --- FUNÇÃO PARA DESENHAR OS PINOS ---
   const renderPins = () => {
     const pins = [];
+    // Ajustamos o espaçamento vertical dinamicamente
+    const verticalGap = rows === 16 ? 18 : rows === 12 ? 24 : 32;
+
     for (let i = 0; i < rows; i++) {
-      // O número de pinos em cada linha é rows + 1 - (rows - i)
-      // Se rows=16, na linha 0 (i=0) items=3, na linha 15 (i=15) items=18
       const itemsInRow = i + 3; 
       pins.push(
         <div 
           key={i} 
-          className="flex justify-center mb-[18px] md:mb-[22px]"
-          // Ajusta o espaçamento dos pinos
-          style={{ gap: (450 / rows) + 'px' }} 
+          className="flex justify-center"
+          style={{ marginBottom: verticalGap + 'px', gap: (400 / rows) + 'px' }} 
         > 
           {Array(itemsInRow).fill(0).map((_, j) => (
              <div 
                key={`${i}-${j}`} 
-               className="w-1.5 h-1.5 bg-white/30 rounded-full shadow-[0_0_5px_rgba(255,255,255,0.2)]" 
+               className="w-1.5 h-1.5 bg-white/20 rounded-full shadow-[0_0_2px_rgba(255,255,255,0.1)]" 
              />
           ))}
         </div>
@@ -126,12 +137,11 @@ export default function PlinkoUI({ balls, onAnimationComplete, onDrop, getMultip
     }
     return pins;
   };
-  // ------------------------------------
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 w-full justify-center items-start">
+    <div className="flex flex-col md:flex-row gap-8 w-full justify-center items-start max-w-6xl mx-auto">
         
-        {/* 1. PAINEL DE CONTROLO (Esquerda) */}
+        {/* 1. CONTROLS (Esquerda) */}
         <div className="w-full md:w-[350px] shrink-0">
             <GameControls
                 balance={balance}
@@ -146,7 +156,6 @@ export default function PlinkoUI({ balls, onAnimationComplete, onDrop, getMultip
                     </button>
                 }
             >
-                {/* --- INSTRUÇÕES --- */}
                 <div className="mb-6 border-b border-white/5 pb-4">
                      <h3 className="text-pink-500 text-xs font-bold mb-2 uppercase tracking-widest">
                         {t('how_to_play')}
@@ -190,8 +199,7 @@ export default function PlinkoUI({ balls, onAnimationComplete, onDrop, getMultip
             </GameControls>
         </div>
 
-        {/* 2. TABULEIRO DO JOGO (Direita) */}
-        {/* Adicionado altura mínima para garantir que o tabuleiro aparece */}
+        {/* 2. TABULEIRO (Direita) */}
         <div className="relative bg-[#131720] pt-8 pb-2 px-4 rounded-[40px] border border-white/5 shadow-2xl flex flex-col items-center overflow-hidden min-h-[500px] w-full max-w-[600px]">
              
              {/* Gradient Overlay */}
@@ -209,22 +217,23 @@ export default function PlinkoUI({ balls, onAnimationComplete, onDrop, getMultip
                ))}
              </div>
 
-             {/* Pinos da Pirâmide */}
-             <div className="relative z-10 mt-4 scale-90 origin-top">
+             {/* Pinos */}
+             <div className="relative z-10 mt-4 scale-90 origin-top w-full">
                 {renderPins()}
              </div>
 
              {/* Multiplicadores (Buckets) */}
-             <div className="flex justify-center gap-1 md:gap-2 mt-auto relative z-10 w-full px-4 mb-4">
+             <div className="flex justify-center gap-1 md:gap-2 mt-auto relative z-10 w-full px-2 mb-4">
                {multipliers.map((m, i) => {
                  let colorClass = 'bg-[#243b4a] text-gray-400 shadow-none'; 
                  
+                 // Cores baseadas no multiplicador
                  if (m >= 10) colorClass = 'bg-pink-600 text-white shadow-[0_0_15px_#db2777] animate-pulse'; 
                  else if (m >= 2) colorClass = 'bg-pink-500 text-white shadow-[0_0_10px_#ec4899]'; 
-                 else if (m >= 1) colorClass = 'bg-white text-gray-900 shadow-[0_0_5px_white]'; 
-
+                 else if (m > 0.5) colorClass = 'bg-[#3b4a5a] text-gray-200';
+                 
                  return (
-                   <div key={i} className={`flex-1 h-8 md:h-10 flex items-center justify-center text-[10px] md:text-xs font-bold rounded-md transition-all duration-300 ${colorClass}`}>
+                   <div key={i} className={`flex-1 h-8 md:h-10 flex items-center justify-center text-[9px] md:text-xs font-bold rounded-md transition-all duration-300 ${colorClass}`}>
                      {m}x
                    </div>
                  )

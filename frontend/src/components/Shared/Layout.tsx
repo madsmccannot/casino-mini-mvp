@@ -3,16 +3,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useUIStore } from '../../state/uiStore';
 import { useCasinoStore } from '../../state/casinoStore';
-import { useWalletStore } from '../../state/walletStore';
 
 // Solana wallet adapter
 import { useWallet } from '@solana/wallet-adapter-react';
 
-// Modais
+// Novo Hook de Autenticação (A ponte entre Wallet e Backend)
+import { useWalletAuth } from '../../hooks/useWalletAuth';
+
+// Modais (Corrigido: Importa da mesma pasta './')
 import { DepositModal } from './DepositModal';
 import { WithdrawModal } from './WithdrawModal';
 
-// Sidebar
+// Sidebar (Assume-se que também está na mesma pasta)
 import { Sidebar } from './Sidebar';
 
 // WALLETS
@@ -34,9 +36,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { language, setLanguage, t } = useUIStore();
   const { balance } = useCasinoStore();
 
-  // Wallets / backend sync
+  // Wallets (Solana)
   const { publicKey, connected } = useWallet();
-  const { connect: connectBackend } = useWalletStore();
+  
+  // Auth Logic (Backend)
+  // Usamos o hook para gerir o login automaticamente sem duplicar lógica
+  const { login, disconnect: disconnectBackend, isAuthenticated } = useWalletAuth();
   
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
@@ -45,12 +50,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // NOVO EFEITO: Sincronizar saldo ao recarregar a página
+  // --- EFEITO DE LOGIN AUTOMÁTICO ---
+  // Se a carteira conectar e ainda não tivermos autenticado no backend -> Login
+  // Se a carteira desconectar -> Logout
   useEffect(() => {
-    if (connected && publicKey) {
-      connectBackend(publicKey.toString());
+    if (connected && publicKey && !isAuthenticated) {
+      login();
+    } else if (!connected && isAuthenticated) {
+      disconnectBackend();
     }
-  }, [connected, publicKey, connectBackend]);
+  }, [connected, publicKey, isAuthenticated, login, disconnectBackend]);
 
   const currentLangObj = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
 
@@ -75,7 +84,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5 group-hover:text-blue-400 transition-colors">{t('bankroll_label')}</span>
                 <div className="flex items-center gap-3 bg-[#0c0f17]/50 px-3 py-1.5 rounded-lg border border-white/5 hover:border-white/10 transition-all">
                    <span className="font-mono text-emerald-400 font-bold text-lg drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
-                        ${balance.toFixed(2)}
+                       {balance.toFixed(4)} SOL
                    </span>
                    <div className="h-4 w-px bg-white/10 mx-1"></div>
                    <div className="flex gap-1">

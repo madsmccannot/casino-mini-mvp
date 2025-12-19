@@ -3,13 +3,17 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useCasinoStore } from '../../state/casinoStore';
 import { useUIStore } from '../../state/uiStore';
 import { toast } from 'react-hot-toast';
-import { isValidSolanaAddress } from '../../utils/validators';
 import { api } from '../../services/api';
+// Se não tiveres o utils/validators, podes usar esta regex inline abaixo
+// import { isValidSolanaAddress } from '../../utils/validators';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Validador simples de endereço Solana (Base58, 32-44 chars)
+const isValidAddress = (addr: string) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
 
 export const WithdrawModal = ({ isOpen, onClose }: Props) => {
   // Inputs
@@ -39,7 +43,9 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
 
   if (!isOpen) return null;
 
-  const availableBalance = isUsdMode ? balance : (balance / solPrice);
+  // CORREÇÃO: O 'balance' da store é SEMPRE em SOL.
+  // Se estiver em modo USD, multiplicamos pelo preço para mostrar quantos dólares o user tem.
+  const availableBalance = isUsdMode ? (balance * solPrice) : balance;
   const currencyLabel = isUsdMode ? 'USD' : 'SOL';
 
   // --- HANDLERS ---
@@ -53,6 +59,8 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
   const validateAndSetAmount = (val: string) => {
     setAmount(val);
     const numVal = parseFloat(val);
+    
+    // Pequena margem de erro para evitar problemas de float (0.000001)
     if (!val) {
         setErrorAmount(null);
     } else if (isNaN(numVal)) {
@@ -65,23 +73,24 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
   };
 
   const handleMaxClick = () => {
+      // Arredonda para baixo para evitar enviar mais do que tem por causa de floats
       const safeMax = Math.floor(availableBalance * 10000) / 10000;
       validateAndSetAmount(safeMax.toString());
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
-    val = val.replace(/[^a-zA-Z0-9]/g, '');
+    // Remove espaços
+    val = val.trim();
     setTargetAddress(val);
     
-    if (val.length > 0 && (val.length < 32 || val.length > 44)) {
-        setErrorAddress("Invalid address length");
+    if (val.length > 0 && !isValidAddress(val)) {
+        setErrorAddress("Invalid address format");
     } else {
         setErrorAddress(null);
     }
   };
 
-  // --- A LÓGICA CORRIGIDA ESTÁ AQUI ---
   const handleWithdraw = async () => {
     if (!solanaKey) return toast.error(t('msg_error_connect'));
     if (errorAmount || errorAddress) return; 
@@ -90,35 +99,31 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
     if (isNaN(val) || val <= 0) return toast.error("Invalid amount");
     if (val > availableBalance) return toast.error("Insufficient balance");
 
-    // Endereço de destino (Se estiver vazio, usa a carteira conectada)
     const finalAddress = targetAddress || solanaKey.toString();
     
-    if (!isValidSolanaAddress(finalAddress)) {
-        setErrorAddress("Invalid Solana address format");
+    if (!isValidAddress(finalAddress)) {
+        setErrorAddress("Invalid Solana address");
         return;
     }
 
-    // O Backend espera sempre o valor em USD para fazer as contas
-    const amountInUSD = isUsdMode ? val : (val * solPrice);
+    // CORREÇÃO: Backend agora espera valor em SOL puro.
+    // Se o user inseriu USD, convertemos para SOL antes de enviar.
+    const amountInSol = isUsdMode ? (val / solPrice) : val;
 
     setLoading(true);
     const toastId = toast.loading("Requesting withdrawal...");
 
     try {
-      // 1. Pedir ao Backend para pagar (NÃO criar transação aqui)
       const response = await api.post('wallet/withdraw', {
-        walletAddress: finalAddress,
-        amount: amountInUSD, 
+        walletAddress: finalAddress, // Se vazio no input, usa a carteira conectada? Não, deve ser explícito ou usar a conectada se null.
+        amount: amountInSol, 
       });
 
       if (response.success) {
-        // 2. Atualizar saldo visual
         setBalance(response.newBalance);
         
-        // 3. Sucesso!
-        toast.success(`${t('msg_wit_success')} (-$${amountInUSD.toFixed(2)})`, { id: toastId });
+        toast.success(`${t('msg_wit_success')} (-${amountInSol.toFixed(4)} SOL)`, { id: toastId });
         
-        // Se o backend enviar o hash da transação, mostramos (prova de pagamento)
         if (response.tx) {
             console.log("Payout TX:", response.tx);
             toast.success("Funds sent! Check wallet.", { duration: 5000 });
@@ -168,7 +173,6 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
                 placeholder="0.00"
             />
             
-            {/* GRUPO DIREITA: Botão MAX + Label Moeda */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 <button
                     onClick={handleMaxClick}

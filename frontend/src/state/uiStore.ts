@@ -290,7 +290,7 @@ const translations = {
     lbl_red: "ROT", lbl_black: "SCHWARZ", lbl_zero: "NULL",
 
     instr_dice: "Sagen Sie das Ergebnis voraus. Passen Sie das Risiko an.",
-    lbl_multiplier: "MULTIPLIKATOR", lbl_win_chance: "CHANCE", lbl_edge: "HAUSVORTEIL",
+    lbl_multiplier: "MULTIPLICATOR", lbl_win_chance: "CHANCE", lbl_edge: "HAUSVORTEIL",
     btn_roll_under: "UNTER ROLLEN", btn_roll_over: "ÜBER ROLLEN", btn_roll: "WÜRFELN", btn_rolling: "ROLLT...",
 
     lbl_mines: "ANZAHL MINEN", instr_mines: "Finden Sie Edelsteine, vermeiden Sie Minen!",
@@ -467,6 +467,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setLanguage: (lang) => set({ language: lang }),
   t: (key) => {
     const lang = get().language;
+    // Fallback para inglês se a chave não existir na língua escolhida
     // @ts-ignore
     return translations[lang]?.[key] || translations['en']?.[key] || key;
   }

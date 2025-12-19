@@ -38,6 +38,11 @@ export function GameControls({
     setIsUsdMode(!isUsdMode);
   };
 
+  // Calcular valor da banca na moeda oposta para referência
+  const bankrollDisplay = isUsdMode 
+    ? `$${(balance * (solPrice || 0)).toFixed(2)}` 
+    : `${balance.toFixed(4)} SOL`;
+
   return (
     <div className="bg-[#1a2c38] p-6 rounded-3xl w-full max-w-md mx-auto shadow-xl border border-white/5 relative z-20">
       
@@ -59,14 +64,14 @@ export function GameControls({
         {/* INPUT CONTAINER */}
         <div className={`relative group flex items-center bg-[#0f212e] rounded-xl border border-transparent transition-colors h-16 px-4 ${borderColors[color] || borderColors.emerald}`}>
             
-            {/* Ícone de Moeda (Fixo à esquerda para melhor UX) */}
-            <div className="mr-3 text-gray-500 font-bold select-none">
+            {/* Ícone de Moeda */}
+            <div className="mr-3 text-gray-500 font-bold select-none flex items-center justify-center w-6">
                 {isUsdMode ? '$' : <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="SOL" className="w-5 h-5 opacity-80" />}
             </div>
 
             <input
               type="number"
-              value={betAmount}
+              value={betAmount || ''}
               onChange={(e) => setBetAmount(Number(e.target.value))}
               className="bg-transparent text-white font-bold text-2xl w-full outline-none placeholder-gray-600 font-mono"
               placeholder="0.00"
@@ -74,28 +79,27 @@ export function GameControls({
               min="0"
             />
 
-            {/* LABEL ESTÁTICA (Substitui o Dropdown) */}
+            {/* LABEL ESTÁTICA (SOL/USD) */}
             <div className="flex items-center gap-2 bg-[#1a2c38] py-2 px-3 rounded-lg border border-white/5 shadow-sm ml-2 select-none">
-                <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-                <span className="font-bold text-white text-sm">SOL</span>
+                <div className={`w-2 h-2 rounded-full ${isUsdMode ? 'bg-green-500' : 'bg-purple-500'} shadow-[0_0_8px_rgba(168,85,247,0.6)]`} />
+                <span className="font-bold text-white text-sm">{isUsdMode ? 'USD' : 'SOL'}</span>
             </div>
         </div>
         
         {/* BANKROLL INFO */}
         <div className="text-right mt-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider transition-all duration-300 whitespace-nowrap">
-           {t('bankroll_label')}: {isUsdMode 
-            ? `$${(balance * (solPrice || 0)).toFixed(2)}` 
-            : `${balance.toFixed(4)} SOL` 
-           }
+           {t('bankroll_label')}: <span className="text-gray-300">{bankrollDisplay}</span>
         </div>
       </div>
 
+      {/* Conteúdo Extra (Botões de opção, sliders, etc) */}
       {children && (
         <div className="mb-6">
           {children}
         </div>
       )}
 
+      {/* Botão de Ação Principal (JOGAR) */}
       <div className="mt-2">
         {actionButton}
       </div>
@@ -103,9 +107,9 @@ export function GameControls({
   );
 }
 
-// Helpers de Estilo (MANTIDOS IGUAIS)
+// Helpers de Estilo
 export const getOptionBtnStyle = (isActive: boolean, colorName: string) => {
-  const base = "py-3 rounded-lg font-bold text-sm transition-all duration-200 border";
+  const base = "py-3 rounded-lg font-bold text-sm transition-all duration-200 border w-full";
   if (!isActive) return `${base} bg-[#0f212e] text-gray-400 border-transparent hover:bg-[#152836] hover:text-gray-200`;
 
   const activeColors: Record<string, string> = {

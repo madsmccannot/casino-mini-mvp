@@ -18,7 +18,7 @@ const DicePage: NextPage = () => {
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const nonceRef = useRef(1); 
   
-  // Client Seed gerada apenas no cliente para evitar erro de Hydration
+  // Client Seed
   const [clientSeed, setClientSeed] = useState<string>(""); 
   const [mounted, setMounted] = useState(false);
 
@@ -48,11 +48,9 @@ const DicePage: NextPage = () => {
         nonce: currentNonce,
       }); 
       
-      // --- CORREÇÃO AQUI ---
-      // O resultado está dentro de data.result
-      const resultObj = data.result || {};
-      const rollResult = resultObj.rolled ?? resultObj.outcome ?? 0;
-      const payoutValue = resultObj.payout || 0; // Ler o payout do objeto result
+      // Robustez: Backend pode chamar 'rolled' ou 'outcome'
+      const rollResult = data.result.rolled ?? data.result.outcome ?? 0;
+      const payoutValue = data.payout || 0; 
       
       setLastRoll(rollResult); 
       setBalance(data.newBalance);
@@ -60,7 +58,7 @@ const DicePage: NextPage = () => {
       nonceRef.current += 1;
       
       return {
-        win: payoutValue > 0, // Agora verifica corretamente se houve prémio
+        win: payoutValue > 0,
         result: rollResult,
         payout: payoutValue
       };
@@ -88,7 +86,7 @@ const DicePage: NextPage = () => {
           lastRoll={lastRoll}
           onPlay={handlePlay}
        />
-        
+       
        <div className="mt-8 text-center text-[10px] text-gray-600 font-mono opacity-50">
            Client Seed: {clientSeed.slice(0, 8)}... | Nonce: {nonceRef.current}
        </div>

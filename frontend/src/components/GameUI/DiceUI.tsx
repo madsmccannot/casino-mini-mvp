@@ -24,6 +24,7 @@ const DiceUI: React.FC<DiceProps> = ({ houseEdge, lastRoll, onPlay }) => {
 
   const { winChance, multiplier, potentialProfitSol } = useMemo(() => {
     let chance = condition === 'over' ? (100 - target) : target;
+    // Limites de segurança
     if (chance < 1) chance = 1;
     if (chance > 98) chance = 98;
     
@@ -33,20 +34,21 @@ const DiceUI: React.FC<DiceProps> = ({ houseEdge, lastRoll, onPlay }) => {
     const potentialProfitSol = currentBetSol * mult - currentBetSol;
     
     return { winChance: chance, multiplier: mult.toFixed(4), potentialProfitSol };
-  }, [target, condition, houseEdge, amount, isUsdMode, solPrice]);
+  }, [target, condition, houseEdge, amount, isUsdMode, solPrice, getBetAmountInSol]);
 
   const handlePlay = async () => {
     const betInSol = getBetAmountInSol(amount, isUsdMode);
-    if (betInSol <= 0 || betInSol > balance) {
-      toast.error(t('modal_low_balance'));
-      return;
-    }
+    
+    if (betInSol <= 0) return toast.error(t('msg_invalid_amount'));
+    if (betInSol > balance) return toast.error(t('modal_low_balance'));
+    
     setIsRolling(true);
     try {
       const { win, result, payout } = await onPlay(betInSol, target, condition);
       if (win) toast.success(`${t('win')} ${result.toFixed(2)}. +${getDisplayValue(payout, isUsdMode)}`);
       else toast.error(`${t('lose')} ${result.toFixed(2)}.`);
     } catch (e) {
+      console.error(e);
       toast.error("Error processing bet");
     } finally {
       setIsRolling(false);

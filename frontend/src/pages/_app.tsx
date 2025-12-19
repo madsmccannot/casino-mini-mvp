@@ -2,14 +2,15 @@ import type { AppProps } from 'next/app';
 import { useMemo } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { clusterApiUrl } from '@solana/web3.js';
 
-// --- 1. CARTEIRAS PADRÃO (Do pacote base) ---
+// --- 1. CARTEIRAS PADRÃO ---
 import { 
   PhantomWalletAdapter, 
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 
-// --- 2. CARTEIRAS EXTRA (Pacotes individuais) ---
+// --- 2. CARTEIRAS EXTRA ---
 import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack';
 import { CoinbaseWalletAdapter } from '@solana/wallet-adapter-coinbase';
 import { TrustWalletAdapter } from '@solana/wallet-adapter-trust';
@@ -23,50 +24,54 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 import Layout from '../components/Shared/Layout'; 
 
 function MyApp({ Component, pageProps }: AppProps) {
-  // Configuração da Rede (Devnet para testes)
-  const network = WalletAdapterNetwork.Devnet;
   
-  // Endpoint RPC (Usa um privado se tiveres, senão usa este público)
-  const endpoint = useMemo(() => "https://api.devnet.solana.com", []);
+  // --- CONFIGURAÇÃO DE REDE (PRODUÇÃO READY) ---
+  // Se existir NEXT_PUBLIC_SOLANA_NETWORK no .env usa essa, senão usa Devnet
+  const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || WalletAdapterNetwork.Devnet;
+  
+  // Endpoint RPC:
+  const endpoint = useMemo(() => {
+    if (process.env.NEXT_PUBLIC_SOLANA_RPC_URL) {
+        return process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
+    }
+    return clusterApiUrl(network);
+  }, [network]);
   
   const wallets = useMemo(
     () => [
-      /**
-       * LISTA DE CARTEIRAS SUPORTADAS
-       * O adaptador vai detetar automaticamente quais extensões o utilizador tem instaladas.
-       */
-      // WalletConnect (Para telemóveis lerem o QR Code)
-      new WalletConnectWalletAdapter({
-        network,
-        options: {
-          projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '', 
-          metadata: {
-            name: 'SolCasino',
-            description: 'The Future of Crypto Gaming',
-            url: 'https://solcasino.app',
-            icons: ['https://avatars.githubusercontent.com/u/37784886']
-          },
-        },
-      }),
-
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
       new BackpackWalletAdapter(),
       new TrustWalletAdapter(),
       new CoinbaseWalletAdapter(),
       
+      // WalletConnect requer Project ID e Tipagem Estrita
+      ...(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ? [
+          new WalletConnectWalletAdapter({
+            // CORREÇÃO AQUI: Forçamos o tipo para satisfazer o WalletConnect
+            network: network as WalletAdapterNetwork.Mainnet | WalletAdapterNetwork.Devnet,
+            options: {
+              projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID, 
+              metadata: {
+                name: 'SolCasino',
+                description: 'The Future of Crypto Gaming',
+                url: 'https://solcasino.app',
+                icons: ['https://avatars.githubusercontent.com/u/37784886']
+              },
+            },
+          })
+      ] : []),
     ],
     [network]
   );
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      {/* autoConnect={true} faz com que a Phantom conecte sozinha se já foi autorizada antes */}
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
             
             <Layout>
-                {/* Fundo Global com Gradiente e Animação */}
+                {/* Fundo Global */}
                 <div className="fixed inset-0 pointer-events-none z-[-1] bg-[radial-gradient(ellipse_at_top,_#1a1f2b,_#0c0f17)]">
                       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[120px] animate-pulse"></div>
                       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[120px]"></div>
@@ -75,7 +80,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <Component {...pageProps} />
             </Layout>
 
-            {/* Configuração dos Popups (Toasts) */}
+            {/* Toasts */}
             <Toaster 
               position="bottom-center"
               toastOptions={{

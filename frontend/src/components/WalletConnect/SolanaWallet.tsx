@@ -1,53 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useWalletStore } from '../../state/walletStore';
-import { useCasinoStore } from '../../state/casinoStore';
+import { useWalletAuth } from '../../hooks/useWalletAuth'; // Usamos o hook apenas para disconnect
 import { toast } from 'react-hot-toast';
 
 export const SolanaWallet = () => {
   // --- HOOKS ---
-  const { publicKey, connected, disconnect } = useWallet();
+  const { publicKey, connected } = useWallet();
   const { setVisible } = useWalletModal(); // Para abrir o modal de escolha de carteira
   
-  // Stores do Backend
-  const { connect: connectBackend, disconnect: disconnectBackend, isConnected: isBackendConnected } = useWalletStore();
-  const { setBalance } = useCasinoStore();
+  // Usamos o hook de auth para fazer o logout completo (Store + Wallet)
+  const { disconnect } = useWalletAuth();
 
   // Estados locais para o Menu Dropdown
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // --- 1. LÓGICA DE SINCRONIZAÇÃO (Do teu código antigo) ---
-  useEffect(() => {
-    const syncWallet = async () => {
-      if (connected && publicKey) {
-        const address = publicKey.toBase58();
-        
-        // Se a carteira Solana conectou, mas o backend ainda não...
-        if (!isBackendConnected) {
-          try {
-            await connectBackend(address);
-            toast.success("Login successful!");
-          } catch (error) {
-            console.error("Backend auth failed:", error);
-            toast.error("Authentication failed.");
-            disconnect(); // Desconecta se falhar no backend
-          }
-        }
-      } 
-      else if (!connected && isBackendConnected) {
-        // Se desconectou da Solana, sai do backend
-        disconnectBackend();
-        setBalance(0);
-        // toast('Wallet disconnected', { icon: '👋' }); // Opcional, para não spamar
-      }
-    };
-
-    syncWallet();
-  }, [connected, publicKey, isBackendConnected, connectBackend, disconnectBackend, disconnect, setBalance]);
-
-  // --- 2. LÓGICA DO MENU (Fechar ao clicar fora) ---
+  // --- LÓGICA DO MENU (Fechar ao clicar fora) ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -73,10 +42,10 @@ export const SolanaWallet = () => {
     setShowMenu(false);
   };
 
-  const handleDisconnect = async () => {
-    await disconnect();
+  const handleDisconnect = () => {
+    disconnect(); // Chama o logout completo do nosso hook
     setShowMenu(false);
-    toast.success("Wallet disconnected");
+    // toast.success("Wallet disconnected"); // Opcional
   };
 
   const shortAddress = publicKey 

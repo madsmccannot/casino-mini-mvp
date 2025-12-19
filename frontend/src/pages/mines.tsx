@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MinesUI from '../components/GameUI/MinesUI';
 import { useCasinoStore } from '../state/casinoStore';
 import { useUIStore } from '../state/uiStore';
@@ -6,15 +6,20 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { api } from '../services/api'; 
 import { toast } from 'react-hot-toast';
 
-type CellState = 'hidden' | 'gem' | 'bomb';
+// Estrutura detalhada da célula para suportar animações e estados
+interface Cell {
+    revealed: boolean;
+    isMine?: boolean; // Só sabemos no fim
+    exploded?: boolean;
+}
 
 export default function MinesPage() {
-  const { balance, setBalance, getBetAmountInSol } = useCasinoStore();
+  const { balance, setBalance, getBetAmountInSol, isAuthenticated } = useCasinoStore();
   const { t } = useUIStore();
   const { connected } = useWallet();
   
   // Estado do Jogo
-  const [grid, setGrid] = useState<CellState[]>(Array(25).fill('hidden'));
+  const [grid, setGrid] = useState<Cell[]>(Array(25).fill({ revealed: false }));
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [win, setWin] = useState(false);
@@ -25,6 +30,11 @@ export default function MinesPage() {
   const [bombCount, setBombCount] = useState(3);
   const [betAmount, setBetAmount] = useState<number>(0.1); 
   const [isUsdMode, setIsUsdMode] = useState(false);
+
+  // --- RESTAURAR SESSÃO AO CARREGAR ---
+  useEffect(() => {
+      // (Futuramente: Implementar chamada à API para recuperar jogo a meio)
+  }, [connected, isAuthenticated]);
 
   // 1. Iniciar Jogo (BET)
   const startGame = async () => {
@@ -46,7 +56,7 @@ export default function MinesPage() {
         setGameOver(false);
         setWin(false);
         setMultiplier(1.0);
-        setGrid(Array(25).fill('hidden'));
+        setGrid(Array(25).fill({ revealed: false }));
 
     } catch (error: any) {
         toast.error(error.response?.data?.error || "Error starting game");
@@ -55,7 +65,7 @@ export default function MinesPage() {
 
   // 2. Revelar Quadrado (REVEAL)
   const handleReveal = async (index: number) => {
-    if (!isPlaying || gameOver || win || grid[index] !== 'hidden' || !sessionId) return;
+    if (!isPlaying || gameOver || win || grid[index].revealed || !sessionId) return;
     
     try {
         const response = await api.placeBet('mines', 0, { sessionId, tileIndex: index }, 'reveal');
@@ -63,10 +73,16 @@ export default function MinesPage() {
         const outcome = response.result.outcome; 
         const newGrid = [...grid];
 
+        // Atualizar estado com resposta do servidor
         if (outcome.status === 'boom') {
-            newGrid[index] = 'bomb';
+            newGrid[index] = { revealed: true, isMine: true, exploded: true };
+            
             // Revelar todas as bombas
-            if (outcome.bombs) outcome.bombs.forEach((b: number) => newGrid[b] = 'bomb');
+            if (outcome.bombs) {
+                outcome.bombs.forEach((b: number) => {
+                    newGrid[b] = { revealed: true, isMine: true, exploded: b === index };
+                });
+            }
             
             setGrid(newGrid);
             setGameOver(true);
@@ -74,12 +90,14 @@ export default function MinesPage() {
             setSessionId(null);
             toast.error(t('modal_bomb_msg'));
         } else {
-            newGrid[index] = 'gem';
+            // Gem found
+            newGrid[index] = { revealed: true, isMine: false };
             setGrid(newGrid);
             setMultiplier(outcome.multiplier);
         }
     } catch (error) { 
         console.error(error); 
+        toast.error("Network error");
     }
   };
 
@@ -99,7 +117,9 @@ export default function MinesPage() {
         const newGrid = [...grid];
         if (response.result.outcome.bombs) {
             response.result.outcome.bombs.forEach((b: number) => {
-                if (newGrid[b] === 'hidden') newGrid[b] = 'bomb';
+                if (!newGrid[b].revealed) {
+                    newGrid[b] = { revealed: true, isMine: true, exploded: false };
+                }
             });
         }
         setGrid(newGrid);

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useUIStore } from '../../state/uiStore';
 import { useCasinoStore } from '../../state/casinoStore';
@@ -19,7 +19,7 @@ interface RouletteProps {
 
 const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
   const { t } = useUIStore();
-  const { balance, getBetAmountInSol } = useCasinoStore();
+  const { balance, getBetAmountInSol, getDisplayValue } = useCasinoStore();
   
   const [amount, setAmount] = useState<number>(0.1);
   const [isUsdMode, setIsUsdMode] = useState(false);
@@ -31,28 +31,28 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
 
   const handlePlayClick = async () => {
     const betInSol = getBetAmountInSol(amount, isUsdMode);
-    if (betInSol <= 0 || betInSol > balance) {
-        toast.error(t('modal_low_balance'));
-        return;
-    }
+    if (betInSol <= 0) return toast.error(t('msg_invalid_amount'));
+    if (betInSol > balance) return toast.error(t('modal_low_balance'));
 
     setIsSpinning(true);
     setResultNumber(null);
 
     try {
-        // Enviar aposta (ex: 'red', 'black', ou '0')
         const { win, resultNumber, payout } = await onPlay(betInSol, selectedBet);
         
-        // Timeout para simular animação da roda (ajustar conforme necessidade)
+        // Simular o delay da rede para a animação da roda
+        // A animação visual da roda leva ~3 segundos
         setTimeout(() => {
             setResultNumber(resultNumber);
             setIsSpinning(false);
             
-            if (win) toast.success(`${t('win')} ${payout.toFixed(4)} SOL!`);
-            else toast.error(`${t('lose')} ${resultNumber} (${getNumberColor(resultNumber)})`);
+            if (win) toast.success(`${t('win')}! +${getDisplayValue(payout, isUsdMode)}`);
+            else toast.error(`${t('lose')} ${resultNumber} (${getNumberColor(resultNumber).toUpperCase()})`);
         }, 3000);
 
     } catch (e) {
+        console.error(e);
+        toast.error("Error spinning wheel.");
         setIsSpinning(false);
     }
   };
@@ -60,7 +60,7 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
   return (
     <div className="flex flex-col md:flex-row gap-8 w-full justify-center items-start max-w-6xl mx-auto">
         
-        {/* 1. PAINEL DE CONTROLO (Esquerda) */}
+        {/* 1. CONTROLS */}
         <div className="w-full md:w-[350px] shrink-0">
             <GameControls
                 balance={balance}
@@ -79,7 +79,6 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
                     </button>
                 }
             >
-                {/* --- INSTRUÇÕES --- */}
                 <div className="mb-6 border-b border-white/5 pb-4">
                      <h3 className="text-red-500 text-xs font-bold mb-2 uppercase tracking-widest">
                         {t('how_to_play')}
@@ -89,10 +88,9 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
                      </p>
                 </div>
 
-                {/* Bet Selection */}
                 <div className="flex flex-col gap-2">
                     <span className="text-xs font-bold text-gray-400 tracking-wide uppercase whitespace-nowrap">
-                       {t('lbl_select_side')}
+                        {t('lbl_select_side')}
                     </span>
                     <div className="grid grid-cols-3 gap-2">
                         <button
@@ -105,14 +103,14 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
                         <button
                             onClick={() => setSelectedBet('0')}
                             disabled={isSpinning}
-                            className={getOptionBtnStyle(selectedBet === '0', 'emerald')} // Verde para Zero
+                            className={getOptionBtnStyle(selectedBet === '0', 'emerald')} // Verde
                         >
                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1"></span> {t('lbl_zero')}
                         </button>
                         <button
                             onClick={() => setSelectedBet('black')}
                             disabled={isSpinning}
-                            className={getOptionBtnStyle(selectedBet === 'black', 'blue')} // Azul/Cinza para Preto
+                            className={getOptionBtnStyle(selectedBet === 'black', 'blue')} // Preto/Azul
                         >
                            <span className="w-2 h-2 rounded-full bg-gray-900 inline-block mr-1"></span> {t('lbl_black')}
                         </button>
@@ -121,7 +119,7 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
             </GameControls>
         </div>
 
-        {/* 2. ÁREA DE JOGO (Direita - Roda e Histórico) */}
+        {/* 2. RODA (Direita) */}
         <div className="flex-1 w-full flex flex-col gap-6">
             
             {/* Roda Visual */}
@@ -135,15 +133,21 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
                      transform: isSpinning && resultNumber === null 
                         ? 'translateX(-5000px)' 
                         : resultNumber !== null
-                            ? `translateX(calc(-50% - ${ROULETTE_NUMBERS.indexOf(resultNumber) * 64}px + 32px))` // Ajuste fino da posição
+                            ? `translateX(calc(-50% - ${ROULETTE_NUMBERS.indexOf(resultNumber) * 64}px + 32px))` 
                             : 'translateX(-50%)'
                    }}
                 >
-                    {/* Renderizamos a lista várias vezes para loop infinito visual */}
                     {[...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS].map((num, i) => {
                         const color = getNumberColor(num);
+                        const isActive = resultNumber === num && !isSpinning;
+                        
+                        let bgClass = '';
+                        if (color === 'red') bgClass = 'bg-red-600';
+                        else if (color === 'black') bgClass = 'bg-gray-900';
+                        else bgClass = 'bg-emerald-600';
+
                         return (
-                        <div key={i} className={`w-16 h-24 flex-shrink-0 flex items-center justify-center font-black text-2xl rounded-lg border-2 border-white/10 ${color === 'red' ? 'bg-red-600 text-white' : color === 'black' ? 'bg-gray-900 text-white' : 'bg-emerald-600 text-white'} ${resultNumber === num && !isSpinning ? 'ring-4 ring-yellow-400 z-30 scale-110 shadow-[0_0_20px_rgba(250,204,21,0.5)]' : 'opacity-50'}`}>
+                        <div key={i} className={`w-16 h-24 flex-shrink-0 flex items-center justify-center font-black text-2xl rounded-lg border-2 border-white/10 text-white ${bgClass} ${isActive ? 'ring-4 ring-yellow-400 z-30 scale-110 shadow-[0_0_20px_rgba(250,204,21,0.5)]' : 'opacity-50'}`}>
                             {num}
                         </div>
                         )
@@ -151,11 +155,10 @@ const RouletteUI: React.FC<RouletteProps> = ({ onPlay }) => {
                 </div>
             </div>
 
-            {/* Grid de Apostas (Opcional - mas bom para preencher o espaço) */}
+            {/* Placeholder para apostas em números (Futuro) */}
             <div className="bg-[#131720] p-6 rounded-3xl border border-white/5 shadow-2xl">
-                 {/* Aqui poderia ir a grelha de números 1-36 se quiséssemos expandir a funcionalidade no futuro */}
                  <div className="text-center text-gray-500 text-sm italic py-8">
-                    Single Number bets coming soon...
+                   Single Number bets coming soon...
                  </div>
             </div>
         </div>

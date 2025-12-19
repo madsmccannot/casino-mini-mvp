@@ -12,40 +12,35 @@ const apiClient = axios.create({
   },
 });
 
-// Interceptor: Adiciona o walletAddress aos HEADERS de todos os pedidos
+// Interceptor: Injeta o TOKEN JWT em todos os pedidos
 apiClient.interceptors.request.use((config) => {
-  // Vamos buscar o endereço à Store Global
-  const walletAddress = useWalletStore.getState().address;
+  // Vamos buscar o estado atual da Store (sem hooks, acesso direto)
+  const { token } = useWalletStore.getState();
   
-  // Se tivermos um endereço conectado, colamo-lo no cabeçalho do pedido
-  if (walletAddress) {
-    config.headers['x-wallet-address'] = walletAddress;
+  // SE tivermos um token (estamos logados), enviamos no header Authorization
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Manter compatibilidade antiga (opcional, mas seguro): injetar no body se for POST
-  if (config.method === 'post' && walletAddress && config.data) {
-    config.data = {
-      ...config.data,
-      walletAddress: config.data.walletAddress || walletAddress
-    };
-  }
-  
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 export const api = {
   // --- APOSTAS ---
   placeBet: async (game: string, betAmount: number, params: any, action: string = 'bet') => {
+    // O backend agora valida o user pelo Token, não precisamos de enviar walletAddress no body
     const response = await apiClient.post('/play', {
       game,
-      betAmount,
+      betAmount, // Opcional no 'reveal', mas o backend ignora se não precisar
       params,
       action
     });
     return response.data;
   },
 
-  // --- GET (Admin, Stats, etc) ---
+  // --- GET Genérico ---
   get: async (endpoint: string) => {
     const response = await apiClient.get(`/${endpoint}`);
     return response.data;

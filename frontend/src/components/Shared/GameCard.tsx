@@ -1,6 +1,4 @@
 import React from 'react';
-// Removemos o import do 'next/image' para evitar o erro de otimização
-// import Image from 'next/image'; 
 
 interface GameCardProps {
   title: string;
@@ -21,19 +19,15 @@ export const GameCard = ({ title, imageUrl, onClick }: GameCardProps) => {
           clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
         }}
       >
-        {/* Fundo/Imagem - USANDO A TAG <img /> NORMAL */}
         <div className="absolute inset-0">
           <img
             src={imageUrl}
             alt={title}
-            // Classes CSS para simular o 'fill' e 'object-cover' do Next.js
             className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 blur-[1px] group-hover:blur-0"
           />
-          
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/40 to-slate-900 group-hover:opacity-50 transition-opacity" />
         </div>
 
-        {/* Borda "Metálica" */}
         <div 
           className="absolute inset-[3px] border-[3px] border-slate-500/30 z-20 pointer-events-none group-hover:border-cyan-400/60 transition-colors duration-300"
           style={{
@@ -41,7 +35,6 @@ export const GameCard = ({ title, imageUrl, onClick }: GameCardProps) => {
           }}
         />
 
-        {/* Conteúdo de Texto */}
         <div className="absolute bottom-0 w-full h-1/2 flex flex-col items-center justify-end pb-8 z-30 bg-gradient-to-t from-black/90 to-transparent">
           <h3 className="text-xl font-bold text-white uppercase tracking-widest drop-shadow-md group-hover:text-cyan-400 transition-colors">
             {title}
@@ -50,12 +43,11 @@ export const GameCard = ({ title, imageUrl, onClick }: GameCardProps) => {
         </div>
       </div>
       
-      {/* Brilho Externo (Glow) */}
       <div 
         className="absolute inset-0 bg-cyan-500 opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-300 -z-10"
         style={{
-             clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-             transform: 'scale(1.05)'
+              clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+              transform: 'scale(1.05)'
         }}
       />
     </div>

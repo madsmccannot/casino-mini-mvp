@@ -2,19 +2,17 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useCasinoStore } from './casinoStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-
 interface WalletState {
   address: string | null;
   token: string | null;
-  isConnected: boolean;
+  isConnected: boolean; // Indica se está logado no BACKEND
 
-  // Ações de Estado (Sync)
+  // Ações
   setWalletSession: (address: string, token: string) => void;
   disconnect: () => void;
   
-  // Ações Async (Helpers)
-  refreshBalance: () => Promise<void>;
+  // Helpers
+  getAuthHeaders: () => { Authorization?: string };
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -33,42 +31,29 @@ export const useWalletStore = create<WalletState>()(
         });
       },
 
-      // 2. Logout / Limpeza
+      // 2. Logout / Limpeza Completa
       disconnect: () => {
         set({ address: null, token: null, isConnected: false });
+        
+        // Limpa também o estado do Casino (Saldo e Auth Flag)
         useCasinoStore.getState().setBalance(0);
         useCasinoStore.getState().setAuthenticated(false);
+        
+        // Limpeza de segurança do LocalStorage
         localStorage.removeItem('token');
         localStorage.removeItem('walletAddress');
       },
 
-      // 3. Atualizar saldo usando o Token guardado
-      refreshBalance: async () => {
+      // 3. Helper para cabeçalhos de API
+      getAuthHeaders: () => {
         const { token } = get();
-        if (!token) return;
-
-        try {
-          // Se tiveres a rota /auth/me implementada:
-          /*
-          const response = await fetch(`${API_URL}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            useCasinoStore.getState().setBalance(data.balance);
-          }
-          */
-         // Por enquanto, como o backend retorna saldo no login e nos jogos,
-         // isto fica preparado para o futuro.
-        } catch (error) {
-          console.error('Balance refresh error:', error);
-        }
-      },
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      }
     }),
     {
-      name: 'casino-wallet-storage',
+      name: 'casino-wallet-storage', // Nome da chave no localStorage
       storage: createJSONStorage(() => localStorage),
+      // Apenas persistimos o que é essencial
       partialize: (state) => ({ 
         address: state.address, 
         token: state.token, 

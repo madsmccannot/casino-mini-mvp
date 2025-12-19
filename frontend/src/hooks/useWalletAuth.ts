@@ -1,87 +1,104 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletStore } from '../state/walletStore';
 import { useCasinoStore } from '../state/casinoStore';
-import { toast } from 'react-hot-toast';
+import { useUIStore } from '../state/uiStore';
 import bs58 from 'bs58';
+import toast from 'react-hot-toast';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export const useWalletAuth = () => {
-  const { publicKey, connected, signMessage, disconnect } = useWallet();
-  const { setBalance, setAuthenticated } = useCasinoStore(); // Assume que adicionaste setAuthenticated à store, se não, ignora
-  
-  // Ref para evitar loops infinitos de login se o useEffect disparar várias vezes
-  const isLoggingIn = useRef(false);
+    // Hooks da Wallet Solana
+    const { publicKey, signMessage, disconnect: disconnectWallet } = useWallet();
+    
+    // Hooks das nossas Stores
+    const { setWalletSession, disconnect: disconnectStore, token } = useWalletStore();
+    const { setAuthenticated, setBalance, isAuthenticated } = useCasinoStore();
+    const t = useUIStore((state) => state.t);
 
-  useEffect(() => {
-    const login = async () => {
-      // Só tentamos logar se estiver conectado, tivermos chave pública e função de assinar
-      if (connected && publicKey && signMessage && !isLoggingIn.current) {
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+    /**
+     * Função Principal de Login
+     * 1. Pede assinatura
+     * 2. Envia para API
+     * 3. Guarda Sessão
+     */
+    const login = useCallback(async () => {
+        // Verificações de segurança básicas
+        if (!publicKey || !signMessage) return;
         
-        // Verifica se já temos token válido para não pedir assinatura sempre (Melhora UX)
-        const savedToken = localStorage.getItem('token');
-        const savedWallet = localStorage.getItem('walletAddress');
-        
-        // Se a carteira mudou ou não há token, fazemos login novo
-        if (savedWallet !== publicKey.toString() || !savedToken) {
-            
-            try {
-                isLoggingIn.current = true;
-                const walletAddress = publicKey.toString();
+        // Se já estamos autenticados no backend, não fazemos nada
+        if (isAuthenticated && token) return;
+
+        setIsLoggingIn(true);
+        const toastId = toast.loading("Verifying wallet ownership...", { id: 'auth-toast' });
+
+        try {
+            const walletAddress = publicKey.toBase58();
+
+            // 1. Preparar a mensagem para assinar
+            // Incluir timestamp previne ataques de repetição
+            const messageString = `Login to SolCasino: ${Date.now()}`;
+            const messageEncoded = new TextEncoder().encode(messageString);
+
+            // 2. Pedir assinatura à Phantom/Solflare
+            const signatureUint8 = await signMessage(messageEncoded);
+            const signature = bs58.encode(signatureUint8);
+
+            // 3. Enviar para o Backend
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress,
+                    signature,
+                    message: messageString
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error || 'Login failed');
+
+            if (data.success) {
+                // 4. Sucesso! Atualizar Stores Globais
+                setWalletSession(walletAddress, data.token); // Guarda token no WalletStore (e localStorage)
+                setBalance(data.user.balance);               // Atualiza saldo no CasinoStore
+                setAuthenticated(true);                      // Marca como autenticado
                 
-                // 1. Mensagem para assinar (Pode incluir timestamp para evitar replay attacks)
-                const messageContent = `Login to SolCasino: ${new Date().getTime()}`;
-                const messageEncoded = new TextEncoder().encode(messageContent);
-
-                toast.loading("Please sign the message to login...", { id: 'auth-toast' });
-
-                // 2. Pedir Assinatura à Phantom/Solflare
-                const signatureUint8 = await signMessage(messageEncoded);
-                const signature = bs58.encode(signatureUint8); // Envia como string base58
-
-                // 3. Enviar para Backend
-                const response = await fetch(`${API_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        walletAddress,
-                        message: messageContent,
-                        signature 
-                    }),
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // 4. Sucesso: Guardar Token e Estado
-                    localStorage.setItem('token', data.token); // O "Passaporte"
-                    localStorage.setItem('walletAddress', walletAddress);
-                    
-                    setBalance(data.user.balance);
-                    // setAuthenticated(true); // Se tiveres este estado na store
-                    
-                    toast.success("Login successful!", { id: 'auth-toast' });
-                    console.log("✅ Authenticated as:", walletAddress);
-                } else {
-                    throw new Error(data.error || "Login failed");
-                }
-
-            } catch (error: any) {
-                console.error("Auth Error:", error);
-                toast.error(error.message || "Authentication failed", { id: 'auth-toast' });
-                disconnect(); // Desliga a carteira se falhar a assinatura para tentar de novo
-                localStorage.removeItem('token');
-            } finally {
-                isLoggingIn.current = false;
+                toast.success("Login successful!", { id: toastId });
+                console.log("✅ Auth Success:", walletAddress);
             }
-        } else {
-             // Lógica opcional: Validar se o token antigo ainda é válido (ex: fetch /me)
-             // Por agora, assumimos que sim para o MVP
-             console.log("♻️ Session restored for:", publicKey.toString());
-        }
-      }
-    };
 
-    login();
-  }, [connected, publicKey, signMessage, setBalance, disconnect]);
+        } catch (error: any) {
+            console.error("Auth Error:", error);
+            toast.error("Authentication failed. Please try again.", { id: toastId });
+            
+            // Se falhar o login no backend, desconectamos a carteira visualmente para o user tentar de novo
+            disconnectWallet(); 
+            disconnectStore();
+        } finally {
+            setIsLoggingIn(false);
+        }
+    }, [publicKey, signMessage, isAuthenticated, token, setWalletSession, setBalance, setAuthenticated, disconnectWallet, disconnectStore]);
+
+    /**
+     * Função de Logout completa
+     */
+    const disconnect = useCallback(() => {
+        disconnectStore();  // Limpa token e address do store/localstorage
+        disconnectWallet(); // Desconecta Phantom
+        setAuthenticated(false);
+        setBalance(0);
+        // toast('Logged out', { icon: '👋' });
+    }, [disconnectStore, disconnectWallet, setAuthenticated, setBalance]);
+
+    return {
+        login,
+        disconnect,
+        isLoggingIn,
+        isAuthenticated // Exportamos para o Layout saber se deve pedir login
+    };
 };
