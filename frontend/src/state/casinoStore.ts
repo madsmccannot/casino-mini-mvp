@@ -16,12 +16,14 @@ interface CasinoState {
   balance: number;       // Real SOL Balance
   solPrice: number;      // USD Price (Simulated)
   isSoundEnabled: boolean;
+  isAuthenticated: boolean; // <--- NOVO: Estado de autenticação
   recentGames: GameResult[];
   
   // Actions
   setBalance: (amount: number) => void;
   addToBalance: (amount: number) => void;
   toggleSound: () => void;
+  setAuthenticated: (status: boolean) => void; // <--- NOVO: Ação para mudar o estado
   addGameResult: (result: Omit<GameResult, 'id' | 'timestamp'>) => void;
   
   // Helpers
@@ -33,6 +35,7 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
   balance: 0,       // Starts at 0 until wallet connects
   solPrice: 150,    // Fixed simulated price
   isSoundEnabled: true,
+  isAuthenticated: false, // <--- NOVO: Começa como falso
   recentGames: [],
 
   setBalance: (amount) => set({ balance: amount }),
@@ -44,6 +47,9 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
   toggleSound: () => set((state) => ({ 
     isSoundEnabled: !state.isSoundEnabled 
   })),
+
+  // <--- NOVO: Função para atualizar a autenticação
+  setAuthenticated: (status) => set({ isAuthenticated: status }),
 
   addGameResult: (result) => set((state) => ({
     recentGames: [

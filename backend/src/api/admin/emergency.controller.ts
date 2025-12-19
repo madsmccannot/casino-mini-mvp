@@ -25,10 +25,9 @@ export const toggleEmergency = async (req: AuthRequest, res: Response) => {
         // Esta função retorna TRUE se a emergência ficar LIGADA
         const isEmergencyNowActive = await shutdownService.toggleEmergencyState(shouldEnableEmergency);
 
-        // CORREÇÃO: A lógica das mensagens estava invertida
         const message = isEmergencyNowActive 
-            ? "⚠️ EMERGENCY MODE ON. Transfers and deposits DISABLED." // Se True -> Ligado
-            : "Emergency mode OFF. Transfers and games ENABLED.";      // Se False -> Desligado
+            ? "⚠️ EMERGENCY MODE ON. Transfers and deposits DISABLED." 
+            : "Emergency mode OFF. Transfers and games ENABLED.";
 
         console.log(`[SECURITY] ${message}`);
         

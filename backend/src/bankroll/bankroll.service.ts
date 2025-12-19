@@ -1,60 +1,55 @@
 import { User } from '../models/User';
-import * as solana from '../blockchain/solana'; // Importar serviço blockchain
-import { solanaWallet } from '../wallet/solanaWallet'; // Importar carteira
+import * as solana from '../blockchain/solana';
+import { solanaWallet } from '../wallet/solanaWallet';
 
-// Endereço reservado para a Banca (apenas para registo na BD)
-const BANKROLL_ADDRESS = 'casino_bankroll';
+// ID interno para a conta da banca na BD
+const BANKROLL_USER_ID = 'casino_bankroll_internal';
 
 export const bankrollService = {
     
     /**
-     * Obtém o saldo virtual da Banca registado na Base de Dados.
-     * Útil para cálculo de Lucro/Prejuízo histórico.
+     * Saldo Virtual (BD): Usado para gráficos de lucro/prejuízo
      */
     getBankrollBalance: async (): Promise<number> => {
-        const bankrollUser = await User.findOne({ 
-            walletAddress: BANKROLL_ADDRESS,
-            isBankroll: true
-        });
-        
-        if (!bankrollUser) {
-            console.error(`🚨 Bankroll user not found! Create user with walletAddress: ${BANKROLL_ADDRESS}`);
-            return 0;
-        }
-        return bankrollUser.balance;
+        const bankrollUser = await User.findOne({ isBankroll: true });
+        return bankrollUser ? bankrollUser.balance : 0;
     },
 
     /**
-     * [NOVO] Obtém o saldo REAL da carteira Solana do Casino (Blockchain).
-     * Usado para verificar solvência antes de grandes pagamentos.
+     * Saldo REAL (Blockchain): A verdadeira solvência do casino.
+     * O RiskEngine usa ISTO para decidir se aceita apostas.
      */
     getHouseBalance: async (): Promise<number> => {
-        const address = solanaWallet.getAddress();
-        return await solana.getWalletBalance(address);
+        try {
+            const address = solanaWallet.getAddress();
+            return await solana.getWalletBalance(address);
+        } catch (error) {
+            console.error("Critical: Failed to fetch blockchain balance", error);
+            return 0; // Se falhar, retorna 0 para bloquear apostas por segurança
+        }
     },
 
     /**
-     * Adiciona ou deduz uma quantia do saldo virtual da Banca na DB.
+     * Atualiza o registo contabilístico na BD
      */
-    updateBankroll: async (amount: number): Promise<number> => {
-        const bankrollUser = await User.findOneAndUpdate(
-            { walletAddress: BANKROLL_ADDRESS, isBankroll: true },
-            { $inc: { balance: amount } },
-            { new: true }
+    updateBankroll: async (amount: number): Promise<void> => {
+        await User.findOneAndUpdate(
+            { isBankroll: true },
+            { 
+                $inc: { balance: amount },
+                $setOnInsert: { walletAddress: BANKROLL_USER_ID, totalWagered: 0, isAdmin: false }
+            },
+            { upsert: true, new: true }
         );
-        
-        if (!bankrollUser) return 0;
-        console.log(`🏦 Bankroll Update (DB): ${amount > 0 ? '+' : ''}${amount.toFixed(4)} SOL. New Balance: ${bankrollUser.balance.toFixed(4)}`);
-        return bankrollUser.balance;
     },
 
     /**
-     * [NOVO] Processa um levantamento de fundos da Casa (Admin Withdrawal).
-     * Envia SOL real da carteira do casino para o admin.
+     * Admin retira lucros (Envia SOL real)
      */
     payoutUser: async (targetAddress: string, amount: number) => {
-        // Reutiliza a lógica segura de withdrawal do solana.ts
         const result = await solana.processWithdrawal(targetAddress, amount);
-        return result.tx; // Retorna a assinatura da transação
+        // Se o dinheiro saiu da wallet real, abatemos no registo virtual
+        await bankrollService.updateBankroll(-amount);
+        return result.tx;
     }
 };

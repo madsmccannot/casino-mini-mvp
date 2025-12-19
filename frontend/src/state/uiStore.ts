@@ -35,7 +35,13 @@ const translations = {
     lbl_bet_amount: "BET AMOUNT", lbl_profit: "PROFIT",
     btn_deposit: "DEPOSIT", btn_withdraw: "WITHDRAW",
     
-    // --- MODAL & WALLET MESSAGES (Novas/Atualizadas) ---
+    // --- AUTH & WALLET (NOVOS) ---
+    msg_auth_sign: "Please sign the message to verify ownership.",
+    msg_auth_success: "Login successful!",
+    msg_auth_error: "Authentication failed. Try again.",
+    msg_auth_loading: "Verifying wallet...",
+
+    // --- MODAL & WALLET MESSAGES ---
     modal_deposit_title: "DEPOSIT SOL",
     modal_withdraw_title: "WITHDRAW SOL",
     modal_amount_sol: "AMOUNT (SOL)",
@@ -97,7 +103,13 @@ const translations = {
     lbl_sol_mode: "MODO SOL", lbl_usd_mode: "MODO USD", lbl_bet_amount: "APOSTA", lbl_profit: "LUCRO",
     btn_deposit: "DEPOSITAR", btn_withdraw: "LEVANTAR",
     
-    // --- MODAL & WALLET MESSAGES (Novas/Atualizadas) ---
+    // --- AUTH NOVOS ---
+    msg_auth_sign: "Assine a mensagem para verificar a carteira.",
+    msg_auth_success: "Login com sucesso!",
+    msg_auth_error: "Autenticação falhou. Tente novamente.",
+    msg_auth_loading: "A verificar carteira...",
+    
+    // --- MODAL & WALLET MESSAGES ---
     modal_deposit_title: "DEPOSITAR SOL",
     modal_withdraw_title: "LEVANTAR SOL",
     modal_amount_sol: "QUANTIDADE (SOL)",
@@ -148,6 +160,12 @@ const translations = {
 
     lbl_sol_mode: "MODO SOL", lbl_usd_mode: "MODO USD", lbl_bet_amount: "APUESTA", lbl_profit: "GANANCIA",
     btn_deposit: "DEPOSITAR", btn_withdraw: "RETIRAR",
+    
+    // Fallback para Auth (usará EN se não traduzido, mas aqui deixo placeholder ou EN)
+    msg_auth_sign: "Please sign the message to verify ownership.",
+    msg_auth_success: "Login successful!",
+    msg_auth_error: "Authentication failed. Try again.",
+    msg_auth_loading: "Verifying wallet...",
     
     // --- MODAL & WALLET MESSAGES ---
     modal_deposit_title: "DEPOSITAR SOL",
@@ -449,7 +467,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   setLanguage: (lang) => set({ language: lang }),
   t: (key) => {
     const lang = get().language;
-    // Fallback prioritário: Tenta a língua -> Tenta Inglês -> Devolve a chave
     // @ts-ignore
     return translations[lang]?.[key] || translations['en']?.[key] || key;
   }

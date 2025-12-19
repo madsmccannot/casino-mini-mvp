@@ -11,11 +11,10 @@ interface DiceResult {
   won: boolean;
 }
 
-// NOTA: Agora é uma função ASYNC porque chama o RNG externo
 export const playDice = async (betAmount: number, params: DiceParams): Promise<DiceResult> => {
   const { target, condition } = params;
 
-  // 1. Obter número seguro (0 a 1) do Switchboard ou Fallback
+  // 1. Obter número seguro do Switchboard
   const randomFloat = await switchboardRNG.secureRandom();
   
   // 2. Converter para escala 0.00 a 100.00
@@ -26,16 +25,15 @@ export const playDice = async (betAmount: number, params: DiceParams): Promise<D
 
   // 3. Lógica do Jogo
   if (condition === 'above') {
-    // Exemplo: Apostou Over 50. Ganha se sair 50.01+
-    // Chance = 100 - 50 = 50%
+    // Apostou Over. Ganha se sair > target
+    // Chance = 100 - target
     const winChance = 100 - target;
     if (rolled > target) {
       won = true;
-      // Multiplicador com House Edge de 1% (99 / chance)
-      multiplier = 99 / winChance;
+      multiplier = 99 / winChance; // 1% Edge (99/chance)
     }
   } else {
-    // Apostou Under 50. Ganha se sair 49.99-
+    // Apostou Under. Ganha se sair < target
     const winChance = target;
     if (rolled < target) {
       won = true;
@@ -43,7 +41,7 @@ export const playDice = async (betAmount: number, params: DiceParams): Promise<D
     }
   }
 
-  // Proteção contra multiplicadores infinitos ou negativos
+  // Proteção
   if (multiplier < 0) multiplier = 0;
 
   const payout = won ? betAmount * multiplier : 0;

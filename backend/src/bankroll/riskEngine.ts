@@ -1,64 +1,56 @@
 import { bankrollService } from './bankroll.service';
-import { RiskLimits, BankrollStatus } from '../types';
+import { getGameLimits, MAX_MULTIPLIER_GLOBAL } from './limits';
+import { BankrollStatus } from '../types';
 
-// Taxas de gestão de risco
-const MAX_BANKROLL_EXPOSURE_PERCENT = 0.5; // Nunca arriscar mais de 0.5% da Banca Total numa única aposta
-const MAX_ALLOWED_MULTIPLIER = 1000; // Multiplicador máximo geral (1000x)
-
-// Limites específicos por jogo (exemplo, deve ser ajustado)
-const DEFAULT_LIMITS: Record<string, RiskLimits> = {
-    'dice': { maxPayoutMultiplier: 100, maxBetAmountSOL: 10 },
-    'coinflip': { maxPayoutMultiplier: 1.99, maxBetAmountSOL: 50 },
-    'roulette': { maxPayoutMultiplier: 14, maxBetAmountSOL: 50 },
-    'plinko': { maxPayoutMultiplier: 110, maxBetAmountSOL: 5 },
-    'mines': { maxPayoutMultiplier: 500, maxBetAmountSOL: 20 },
-};
+// Regra de Ouro: Nunca arriscar mais de 1% da banca numa única aposta.
+// Se a banca tiver 100 SOL, o pagamento máximo possível é 1 SOL.
+const MAX_BANKROLL_EXPOSURE_PERCENT = 1.0; 
 
 export const riskEngine = {
 
     /**
-     * Obtém o estado atual da Banca e calcula os limites máximos permitidos.
+     * Calcula o estado de risco atual
      */
     getStatus: async (): Promise<BankrollStatus> => {
-        const totalBalance = await bankrollService.getBankrollBalance();
+        const totalBalance = await bankrollService.getHouseBalance();
         
-        // Calculamos a exposição máxima em SOL
         const maxExposure = totalBalance * (MAX_BANKROLL_EXPOSURE_PERCENT / 100);
 
         return {
             totalBalance,
             maxRiskExposure: maxExposure,
-            maxPayoutMultiplier: MAX_ALLOWED_MULTIPLIER,
+            maxPayoutMultiplier: MAX_MULTIPLIER_GLOBAL,
         };
     },
 
     /**
-     * Verifica se uma aposta excede os limites de risco do Casino.
-     * @param game - O jogo a ser jogado.
-     * @param wager - O valor apostado.
-     * @param potentialMultiplier - O multiplicador que pode ser ganho (se conhecido, como no Dice/Coinflip).
-     * @returns True se for seguro, ou uma string de erro.
+     * Valida se uma aposta é segura
      */
     validateBet: async (game: string, wager: number, potentialMultiplier: number): Promise<true | string> => {
-        const { totalBalance, maxRiskExposure } = await riskEngine.getStatus();
-        
-        const gameLimits = DEFAULT_LIMITS[game] || DEFAULT_LIMITS['dice']; // Fallback
-        
-        const calculatedPayout = wager * potentialMultiplier;
+        if (wager <= 0) return "Bet amount must be positive";
 
-        // 1. Verificar se o Multiplicador é demasiado alto para o jogo
+        // 1. Limites do Jogo (Estáticos)
+        const gameLimits = getGameLimits(game);
+
+        // 2. Estado da Banca (Dinâmico)
+        const { maxRiskExposure } = await riskEngine.getStatus();
+        
+        const calculatedMaxPayout = wager * potentialMultiplier;
+
+        // CHECK A: Multiplicador ilegal?
         if (potentialMultiplier > gameLimits.maxPayoutMultiplier) {
-            return `Multiplier ${potentialMultiplier.toFixed(2)}x exceeds the max limit for ${game} (${gameLimits.maxPayoutMultiplier}x).`;
+            return `Multiplier ${potentialMultiplier.toFixed(2)}x exceeds limit for ${game}`;
         }
 
-        // 2. Verificar se a aposta é maior que o limite fixo do jogo
+        // CHECK B: Aposta acima do teto fixo?
         if (wager > gameLimits.maxBetAmountSOL) {
-            return `Wager exceeds max allowed bet for ${game} (${gameLimits.maxBetAmountSOL} SOL).`;
+            return `Wager exceeds max allowed for ${game} (${gameLimits.maxBetAmountSOL} SOL)`;
         }
 
-        // 3. Verificar se o PAGAMENTO TOTAL excede o limite de exposição da Banca
-        if (calculatedPayout > maxRiskExposure) {
-            return `Potential payout (${calculatedPayout.toFixed(4)} SOL) exceeds Casino's current risk limit of ${maxRiskExposure.toFixed(4)} SOL.`;
+        // CHECK C: Risco de Ruína (O mais importante)
+        // O casino tem dinheiro para pagar se o jogador ganhar?
+        if (calculatedMaxPayout > maxRiskExposure) {
+            return `Max potential payout (${calculatedMaxPayout.toFixed(4)} SOL) exceeds casino risk limit. Lower your bet.`;
         }
 
         return true;

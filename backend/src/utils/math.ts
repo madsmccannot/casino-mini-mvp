@@ -4,32 +4,30 @@ const LAMPORTS_PER_SOL = 1_000_000_000;
 export const mathUtils = {
 
     /**
-     * Converte Lamports para SOL.
-     * @param lamports - O valor em Lamports (BigInt ou number).
-     * @returns O valor correspondente em SOL (number).
+     * Converte Lamports para SOL com precisão segura (4 casas decimais para display).
      */
     lamportsToSol: (lamports: number | bigint): number => {
-        return Number(lamports) / LAMPORTS_PER_SOL;
+        const val = Number(lamports) / LAMPORTS_PER_SOL;
+        // Fix para floating point errors (ex: 0.0000000001)
+        return Number(val.toFixed(9)); 
     },
 
     /**
-     * Converte SOL para Lamports.
-     * @param sol - O valor em SOL (number).
-     * @returns O valor correspondente em Lamports (number - usar BigInt e uma biblioteca BigNumber em produção é recomendado).
+     * Converte SOL para Lamports de forma segura.
+     * Removemos casas decimais excessivas antes de multiplicar.
      */
     solToLamports: (sol: number): number => {
-        // Arredonda para baixo para evitar problemas de ponto flutuante em Lamports
-        return Math.floor(sol * LAMPORTS_PER_SOL);
+        // Truncamos para 9 casas decimais (limite do SOL) antes de multiplicar
+        // para evitar erros como 1.0000000000001 -> 1000000001
+        const fixedSol = Number(sol.toFixed(9)); 
+        return Math.floor(fixedSol * LAMPORTS_PER_SOL);
     },
     
     /**
-     * Arredonda um número para um número específico de casas decimais.
-     * @param num - O número a arredondar.
-     * @param decimals - O número de casas decimais.
-     * @returns O número arredondado.
+     * Arredonda um número para X casas decimais.
      */
     round: (num: number, decimals: number): number => {
         const factor = 10 ** decimals;
-        return Math.round(num * factor) / factor;
+        return Math.round((num + Number.EPSILON) * factor) / factor;
     }
 };

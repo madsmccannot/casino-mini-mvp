@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { User } from '../../models/User';
 
 export interface AuthRequest extends Request {
@@ -7,38 +8,44 @@ export interface AuthRequest extends Request {
 
 export const validateBet = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    // Tenta encontrar o endereço em 3 sítios: Body (POST), Query (GET url) ou Headers (Standard)
-    let walletAddress = req.body.walletAddress || req.query.walletAddress || req.headers['x-wallet-address'];
+    // 1. SEGURANÇA: Validar Token JWT (Bearer Token)
+    // O Frontend envia: "Authorization: Bearer <token>"
+    const authHeader = req.headers.authorization;
     
-    // Se o endereço vier num array (raro, mas possível em headers), pegamos o primeiro
-    if (Array.isArray(walletAddress)) walletAddress = walletAddress[0];
-
-    if (!walletAddress) {
-      return res.status(401).json({ error: 'Unauthorized: Wallet address required' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Se for rota de admin, talvez tenha outra lógica, mas por defeito bloqueia
+      return res.status(401).json({ error: 'Unauthorized: No token provided' });
     }
 
-    // Buscar utilizador à BD (case insensitive)
-    const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
-    
+    const token = authHeader.split(' ')[1];
+    const secret = process.env.JWT_SECRET || 'dev-secret-do-not-use-in-prod';
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, secret);
+    } catch (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+
+    // 2. Buscar User Fresco na BD
+    const user = await User.findById(decoded.id);
     if (!user) {
-      return res.status(404).json({ error: 'User not found in DB.' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Anexa o user ao request
     req.user = user;
 
-    // Se for uma rota de Admin, não precisamos de validar saldo de aposta, apenas autenticar
-    if (req.path.includes('/admin')) {
-        return next();
-    }
+    // Se for Admin, passa direto
+    if (req.path.includes('/admin')) return next();
 
-    // Lógica existente para jogos (Mines, etc.)
+    // 3. Validações de Saldo (Lógica de Jogo)
     const { betAmount, game, action } = req.body;
+    
+    // Ignora validação de saldo para ações secundárias do Mines (reveal/cashout)
     if (game === 'mines' && (action === 'reveal' || action === 'cashout')) {
       return next();
     }
 
-    // Validações de aposta (apenas se houver betAmount)
     if (betAmount !== undefined) {
         if (betAmount <= 0) return res.status(400).json({ error: 'Invalid bet amount' });
         if (user.balance < betAmount) {
@@ -47,6 +54,7 @@ export const validateBet = async (req: AuthRequest, res: Response, next: NextFun
     }
     
     next();
+
   } catch (error) {
     console.error('Auth validation error:', error);
     return res.status(500).json({ error: 'Internal server error during validation' });

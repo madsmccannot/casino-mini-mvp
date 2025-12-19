@@ -7,11 +7,10 @@ import { User } from './models/User';
 
 // --- SOLANA ONLY ---
 import * as solana from './blockchain/solana'; 
-import { priceOracle } from './utils/priceOracle';
 import { switchboardRNG } from './rng/switchboard';
 
-// --- GAME ROUTES ---
-import { validateBet } from './api/bets/validateBet.middleware';
+// --- GAME ROUTES & MIDDLEWARE ---
+import { validateBet, AuthRequest } from './api/bets/validateBet.middleware'; // Importar AuthRequest
 import { placeBet } from './api/bets/placeBet.controller';
 
 // --- SECURITY / ADMIN ---
@@ -22,7 +21,7 @@ import { getBankrollStatus, withdrawHouseFunds } from './api/admin/bankroll.cont
 // --- CONFIG ---
 dotenv.config(); 
 connectDB(); 
-switchboardRNG.init();
+switchboardRNG.init(); // Inicia RNG (ou fallback seguro)
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -30,71 +29,50 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// --- FINANCIAL REQUEST TYPE (SOL ONLY) ---
-interface FinancialRequest extends Request {
-  body: {
-    walletAddress: string;
-    amount?: number;
-    signature?: string;
-  };
-}
-
 // --- ROOT ---
 app.get('/', (_req, res) => {
-  res.json({ status: 'SolCasino Backend Online 🚀', db: 'Connected' });
-});
-
-// --- CASINO PUBLIC KEY (SOLANA ONLY) ---
-app.get('/api/casino/publicKey', (_req, res) => {
-  res.send(solana.getCasinoPublicKey());
+  res.json({ status: 'SolCasino Backend Online 🚀', mode: 'SOL_NATIVE' });
 });
 
 // --- AUTH ---
 app.post('/api/auth/login', loginUser);
 
-// --- ADMIN ROUTES ---
-// CORREÇÃO: Adicionado 'validateBet' para autenticar o administrador
+// --- ADMIN ROUTES (Protegidas por validateBet que verifica isAdmin) ---
 app.post('/api/admin/emergency/toggle', validateBet as any, toggleEmergency as any); 
 app.post('/api/admin/emergency/export', validateBet as any, exportBalances as any); 
-
-// Bankroll Admin
 app.get('/api/admin/bankroll', validateBet as any, getBankrollStatus as any);
 app.post('/api/admin/bankroll/withdraw', validateBet as any, withdrawHouseFunds as any);
 
-// --- DEPOSIT (SOL -> USD) ---
+// --- DEPOSIT (SOL NATIVE) ---
+// Depósitos são públicos (qualquer um pode mandar dinheiro), validamos pela assinatura na blockchain
 app.post(
   '/api/wallet/deposit',
   checkEmergencyState,
-  async (req: FinancialRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const { walletAddress, signature } = req.body;
 
-      if (!signature) {
-        return res.status(400).json({ error: 'Missing transaction signature.' });
+      if (!signature || !walletAddress) {
+        return res.status(400).json({ error: 'Missing signature or wallet address.' });
       }
 
-      // 1. Audit Solana Transaction
+      // 1. Auditar Transação na Blockchain
       const auditResult = await solana.auditRecentDeposits(walletAddress, signature);
-      const amountSol = auditResult?.amountSol || 0;
-
-      if (!auditResult || !auditResult.isConfirmed || amountSol <= 0) {
-        return res.status(400).json({ error: 'Invalid Solana transaction.' });
+      
+      if (!auditResult || !auditResult.isConfirmed || auditResult.amountSol <= 0) {
+        return res.status(400).json({ error: 'Invalid or unconfirmed Solana transaction.' });
       }
 
-      // 2. Convert SOL -> USD
-      const priceUsd = await priceOracle.getPrice('SOL');
-      const amountUSD = amountSol * priceUsd;
+      const amountSol = auditResult.amountSol;
 
-      // 3. Credit User Balance
+      // 2. Creditar Saldo em SOL (Sem conversão USD)
       const updatedUser = await User.findOneAndUpdate(
         { walletAddress: walletAddress.toLowerCase() },
-        { $inc: { balance: amountUSD } },
+        { $inc: { balance: amountSol } },
         { new: true }
       );
 
-      console.log(
-        `💰 Deposit: ${amountSol} SOL @ $${priceUsd} = +$${amountUSD.toFixed(2)} USD`
-      );
+      console.log(`💰 Deposit: +${amountSol.toFixed(4)} SOL for ${walletAddress.slice(0,6)}...`);
 
       res.json({ success: true, newBalance: updatedUser?.balance });
 
@@ -105,53 +83,56 @@ app.post(
   }
 );
 
-// --- WITHDRAW (USD -> SOL) ---
+// --- WITHDRAW (SOL NATIVE & SECURE) ---
+// Alteração Crítica: Agora usa 'validateBet' para garantir que só o dono da conta levanta o dinheiro
 app.post(
   '/api/wallet/withdraw',
   checkEmergencyState,
-  async (req: FinancialRequest, res: Response) => {
+  validateBet as any, // <--- SEGURANÇA: Exige Token JWT
+  async (req: AuthRequest, res: Response) => {
     try {
-      const { walletAddress, amount } = req.body;
+      const { amount } = req.body;
+      const user = req.user; // O middleware já carregou o user seguro
+
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
 
       if (!amount || amount <= 0) {
         return res.status(400).json({ error: 'Invalid amount.' });
       }
 
-      // 1. Check Balance
-      const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
-
-      if (!user || user.balance < amount) {
-        return res.status(400).json({ error: 'Insufficient USD balance.' });
+      // 1. Verificar Saldo (SOL)
+      if (user.balance < amount) {
+        return res.status(400).json({ error: 'Insufficient SOL balance.' });
       }
 
-      // 2. Convert USD -> SOL
-      const priceUsd = await priceOracle.getPrice('SOL');
-      const solAmount = amount / priceUsd;
-
-      if (solAmount < 0.001) {
-        return res.status(400).json({ error: 'Amount too small to withdraw.' });
-      }
-
-      console.log(
-        `💸 Withdraw: $${amount} USD -> ${solAmount.toFixed(4)} SOL`
+      // 2. Bloquear Fundos (Atomicamente) antes de enviar
+      // Isto evita Race Conditions onde o user tenta levantar 2x rápido
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: user._id, balance: { $gte: amount } },
+        { $inc: { balance: -amount } },
+        { new: true }
       );
 
-      // 3. Lock Funds
-      user.balance -= amount;
-      await user.save();
+      if (!updatedUser) {
+        return res.status(400).json({ error: 'Insufficient balance (Concurrency check).' });
+      }
+
+      console.log(`💸 Withdraw Request: ${amount} SOL to ${user.walletAddress}`);
 
       try {
-        // 4. Pay on Solana
-        const result = await solana.processWithdrawal(walletAddress, solAmount);
+        // 3. Enviar SOL na Blockchain
+        const result = await solana.processWithdrawal(user.walletAddress, amount);
 
         console.log(`✅ Paid! TX: ${result.tx}`);
-        res.json({ success: true, newBalance: user.balance, tx: result.tx });
+        res.json({ success: true, newBalance: updatedUser.balance, tx: result.tx });
 
       } catch (blockchainError: any) {
-        console.error('❌ Solana Error:', blockchainError.message);
-        user.balance += amount;
-        await user.save();
-        res.status(500).json({ error: 'Solana payout failed. Funds refunded.' });
+        console.error('❌ Solana Payout Error:', blockchainError.message);
+        
+        // REEMBOLSO DE EMERGÊNCIA: Se a blockchain falhar, devolvemos o saldo
+        await User.findByIdAndUpdate(user._id, { $inc: { balance: amount } });
+        
+        res.status(500).json({ error: 'Blockchain transfer failed. Funds refunded to balance.' });
       }
 
     } catch (error) {

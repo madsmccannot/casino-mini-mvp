@@ -2,13 +2,14 @@ import { Response } from 'express';
 import { AuthRequest } from '../bets/validateBet.middleware';
 import { bankrollService } from '../../bankroll/bankroll.service';
 import { solanaWallet } from '../../wallet/solanaWallet';
-import { shutdownService } from '../../emergency/shutdown.service'; // <--- IMPORT NOVO
+import { shutdownService } from '../../emergency/shutdown.service'; 
 import { logger } from '../../utils/logger';
 
 /**
  * ROTA ADMIN: Obtém o estado atual da Banca e do Sistema
  */
 export const getBankrollStatus = async (req: AuthRequest, res: Response) => {
+    // Verificação de segurança (Admin Only)
     if (!req.user || !req.user.isAdmin) {
         return res.status(403).json({ error: "Access Denied" });
     }
@@ -17,7 +18,7 @@ export const getBankrollStatus = async (req: AuthRequest, res: Response) => {
         // 1. Obter saldo real da blockchain
         const balanceSol = await bankrollService.getHouseBalance();
         
-        // 2. Obter estado de emergência (NOVO)
+        // 2. Obter estado de emergência
         // Se isSystemActive for FALSE, significa que a Emergência é TRUE (está parado)
         const isSystemActive = await shutdownService.isSystemActive();
         const isEmergency = !isSystemActive; 
@@ -26,7 +27,7 @@ export const getBankrollStatus = async (req: AuthRequest, res: Response) => {
             address: solanaWallet.getAddress(),
             balanceSol: balanceSol,
             status: balanceSol > 1 ? 'HEALTHY' : 'LOW_FUNDS',
-            isEmergency: isEmergency // <--- Enviamos isto para o frontend bloquear os botões
+            isEmergency: isEmergency // O frontend usa isto para bloquear botões
         });
 
     } catch (error) {

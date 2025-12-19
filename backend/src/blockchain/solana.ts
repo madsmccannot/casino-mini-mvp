@@ -14,7 +14,7 @@ if (!CASINO_PRIVATE_KEY) {
     process.exit(1);
 }
 
-// Inicializar Conexão e Wallet
+// Inicializar Conexão
 const connection = new Connection(RPC_URL, 'confirmed');
 let casinoKeypair: Keypair;
 
@@ -32,7 +32,7 @@ export const getCasinoPublicKey = () => {
 };
 
 /**
- * NOVO: Obtém o saldo de uma carteira em SOL
+ * Obtém o saldo de qualquer carteira em SOL
  */
 export const getWalletBalance = async (address: string): Promise<number> => {
     try {
@@ -51,7 +51,7 @@ export const getWalletBalance = async (address: string): Promise<number> => {
  */
 export const auditRecentDeposits = async (walletAddress: string, signature: string) => {
     const MAX_RETRIES = 5;
-    const RETRY_DELAY = 1500;
+    const RETRY_DELAY = 2000; // Aumentei ligeiramente para dar tempo à propagação
 
     for (let i = 0; i < MAX_RETRIES; i++) {
         try {
@@ -78,7 +78,9 @@ export const auditRecentDeposits = async (walletAddress: string, signature: stri
             for (const instr of instructions) {
                 if ('parsed' in instr && instr.program === 'system' && instr.parsed.type === 'transfer') {
                     const info = instr.parsed.info;
+                    // Verifica se o dinheiro foi PARA a carteira do casino
                     if (info.destination === casinoKeypair.publicKey.toBase58()) {
+                        // Verifica se veio da carteira do utilizador
                         if (info.source === walletAddress) {
                             amountLamports += Number(info.lamports);
                             validTransfer = true;
@@ -108,17 +110,30 @@ export const auditRecentDeposits = async (walletAddress: string, signature: stri
 
 /**
  * Processa levantamentos (Envia SOL do Casino para o User)
+ * Usado pelo Payout do Jogo e pelo Withdrawal do Admin.
  */
 export const processWithdrawal = async (userAddress: string, amountSol: number) => {
     try {
+        // 1. Verificação de Segurança (Hot Wallet tem fundos?)
+        const currentBalance = await connection.getBalance(casinoKeypair.publicKey);
+        const amountLamports = Math.floor(amountSol * LAMPORTS_PER_SOL);
+        
+        // Deixamos uma margem de 0.005 SOL para taxas de gás
+        if (currentBalance < (amountLamports + 5000)) {
+            logger.error(`❌ Insufficient funds in Hot Wallet. Has: ${currentBalance}, Needs: ${amountLamports}`);
+            throw new Error("Casino Hot Wallet insufficient funds. Contact support.");
+        }
+
+        // 2. Construir Transação
         const transaction = new Transaction().add(
             SystemProgram.transfer({
                 fromPubkey: casinoKeypair.publicKey,
                 toPubkey: new PublicKey(userAddress),
-                lamports: Math.floor(amountSol * LAMPORTS_PER_SOL),
+                lamports: amountLamports,
             })
         );
 
+        // 3. Enviar e Confirmar
         const signature = await sendAndConfirmTransaction(
             connection,
             transaction,
@@ -131,6 +146,8 @@ export const processWithdrawal = async (userAddress: string, amountSol: number) 
 
     } catch (error: any) {
         logger.error(`❌ Withdrawal failed: ${error.message}`);
-        throw new Error("Blockchain transfer failed");
+        // Repassamos o erro original se for de fundos, senão genérico
+        if (error.message.includes("Hot Wallet")) throw error;
+        throw new Error("Blockchain transfer failed. Please try again later.");
     }
 };

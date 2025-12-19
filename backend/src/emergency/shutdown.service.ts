@@ -11,25 +11,27 @@ export const shutdownService = {
      */
     toggleEmergencyState: async (enableEmergency: boolean): Promise<boolean> => {
         // Se ativamos a emergência, as transferências ficam FALSE (Desativadas)
-        // Se desativamos a emergência, as transferências ficam TRUE (Ativadas)
         const isTransferActive = !enableEmergency;
 
         try {
             const config = await User.findOneAndUpdate(
-                { walletAddress: SYSTEM_CONFIG_ID.toLowerCase() }, // Procura o documento de sistema
+                { walletAddress: SYSTEM_CONFIG_ID.toLowerCase() },
                 { 
                     $set: { 
                         isTransferEnabled: isTransferActive,
-                        isBankroll: false, // Garante que não conta como banca
-                        isAdmin: false     // Garante que não conta como admin
+                        isBankroll: false, 
+                        isAdmin: false     
                     } 
                 },
                 { 
-                    upsert: true, // Cria se não existir
-                    new: true,    // Retorna o novo documento
+                    upsert: true, 
+                    new: true,    
                     setDefaultsOnInsert: true 
                 }
             );
+
+            // Se o documento for null (raro), assumimos emergência para segurança
+            if (!config) throw new Error("Failed to update system config");
 
             // Retornamos TRUE se estiver em MODO DE EMERGÊNCIA (ou seja, transferências OFF)
             return !config.isTransferEnabled;
@@ -58,15 +60,14 @@ export const shutdownService = {
      * Exporta saldos de todos os jogadores (exceto sistema e banca)
      */
     exportPlayerBalances: async () => {
-        // Filtra para não incluir a conta de sistema nem a banca
         const users = await User.find({
             walletAddress: { $nin: [SYSTEM_CONFIG_ID.toLowerCase(), 'casino_bankroll'] },
-            balance: { $gt: 0 } // Apenas users com saldo positivo
-        }).select('walletAddress balance totalWagered'); // Seleciona apenas campos úteis
+            balance: { $gt: 0 } 
+        }).select('walletAddress balance totalWagered'); 
 
         return {
             count: users.length,
-            filePath: 'balances_export.csv', // (Num sistema real gerarias um CSV aqui)
+            filePath: 'balances_export.csv',
             data: users
         };
     }

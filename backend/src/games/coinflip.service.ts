@@ -1,6 +1,6 @@
 import { GameResult } from '../types';
-import { switchboardRNG } from '../rng/switchboard'; // RNG Externo
-import { rngService } from '../rng/commitReveal';   // Para compatibilidade de tipos de prova
+import { switchboardRNG } from '../rng/switchboard'; 
+import { rngService } from '../rng/commitReveal'; 
 
 interface CoinflipParams {
   side: 'heads' | 'tails';
@@ -20,8 +20,7 @@ export const playCoinflip = async (wager: number, params: CoinflipParams): Promi
   // 2. Converter para 0.00 a 100.00
   const result = parseFloat((randomFloat * 100).toFixed(2));
 
-  // 3. Lógica do Jogo: > 50.00 é Heads, < 50.00 é Tails
-  // (Intervalo 0-50 = Tails, 50-100 = Heads)
+  // 3. Lógica do Jogo: >= 50.00 é Heads, < 50.00 é Tails
   const isHeads = result >= 50.00; 
   const outcome = isHeads ? 'heads' : 'tails';
   const isWin = outcome === side;
@@ -29,8 +28,7 @@ export const playCoinflip = async (wager: number, params: CoinflipParams): Promi
   const multiplier = 1.98; // House edge ~1%
   const payout = isWin ? wager * multiplier : 0;
 
-  // Geramos dados de prova fictícios para manter a compatibilidade com o Frontend
-  // num cenário real, o RNG Switchboard seria a prova.
+  // Gerar prova compatível com frontend
   const proof = rngService.generateResultForGame(clientSeed, nonce).proof;
 
   return {
@@ -43,7 +41,7 @@ export const playCoinflip = async (wager: number, params: CoinflipParams): Promi
     outcome: outcome, 
     timestamp: new Date(),
     
-    // Dados de prova (Híbrido: Resultado via Switchboard, Hash via Local)
+    // Dados de prova
     clientSeed: clientSeed,
     nonce: nonce,
     serverSeed: proof.serverSeed, 

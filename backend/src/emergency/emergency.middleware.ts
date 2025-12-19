@@ -7,14 +7,12 @@ import { shutdownService } from './shutdown.service';
  */
 export const checkEmergencyState = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        // CORREÇÃO: Usamos o nome correto da função 'isSystemActive'
         const isActive = await shutdownService.isSystemActive();
         
         // Se o sistema NÃO estiver ativo (está em emergência)
         if (!isActive) {
             
-            // EXCEÇÃO IMPORTANTE: Se for uma rota de Admin, deixamos passar.
-            // Sem isto, se ligares o bloqueio, bloqueias-te a ti próprio e não consegues desligar!
+            // EXCEÇÃO IMPORTANTE: Admin passa sempre
             if (req.path.includes('/admin')) {
                 return next();
             }
@@ -29,9 +27,8 @@ export const checkEmergencyState = async (req: Request, res: Response, next: Nex
         next();
     } catch (error) {
         console.error("Emergency middleware failed:", error);
-        // Em caso de erro na verificação, deixamos passar ou bloqueamos? 
-        // Por segurança, vamos deixar passar o next() para não travar o site se o Mongo falhar momentaneamente,
-        // mas registamos o erro crítico acima.
+        // Em caso de erro (ex: BD em baixo), deixamos passar para não bloquear sem razão,
+        // mas o log acima avisa-nos.
         next(); 
     }
 };

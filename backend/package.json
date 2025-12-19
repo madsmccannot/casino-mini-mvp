@@ -5,7 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "ts-node src/server.ts",
-    "build": "tsc", 
+    "build": "tsc",
     "start": "node dist/server.js"
   },
   "keywords": [],
@@ -14,14 +14,16 @@
   "dependencies": {
     "@solana/web3.js": "^1.98.4",
     "@switchboard-xyz/common": "^5.5.1",
-    "@switchboard-xyz/solana.js": "^3.2.5",
+    "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.13.2",
-    "bs58": "^6.0.0",
+    "bs58": "^5.0.0",
     "cors": "^2.8.5",
     "csv-writer": "^1.6.0",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.0.1",
+    "tweetnacl": "^1.0.3",
     "winston": "^3.19.0"
   },
   "devDependencies": {

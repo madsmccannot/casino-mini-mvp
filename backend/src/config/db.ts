@@ -1,16 +1,23 @@
 import mongoose from 'mongoose';
 
 export const connectDB = async () => {
-  try {
-    // CORREÇÃO: Adicionada uma URI local de fallback para garantir que o servidor arranca 
-    // mesmo que o .env não esteja configurado.
-    const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/solcasino';
+  try {
+    // Definir strictQuery para evitar warnings em versões recentes do Mongoose
+    mongoose.set('strictQuery', false);
+
+    const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/solcasino';
     
-    const conn = await mongoose.connect(MONGODB_URI);
-    
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-  } catch (error: any) {
-    console.error(`❌ Error connecting to MongoDB: ${error.message}`);
-    process.exit(1);
-  }
+    // Opções de conexão para maior estabilidade em produção
+    const conn = await mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000, // Timeout se não encontrar a BD em 5s
+        socketTimeoutMS: 45000, // Fechar conexões inativas
+    });
+    
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    
+  } catch (error: any) {
+    console.error(`❌ Error connecting to MongoDB: ${error.message}`);
+    // Se a BD falhar, o servidor não pode arrancar (Prioridade 3 & 4 dependem disto)
+    process.exit(1);
+  }
 };
