@@ -1,0 +1,182 @@
+casino-platform-poc/
+│
+├── README.md                                  # explicação rápida, how-to run (testnet & mainnet)
+├── LICENSE
+├── .env.example                               # variáveis para dev (RPCs, keys, chainlink keys, switchboard, DB)
+│
+├── docs/
+│   ├── requisitos.md
+│   ├── fluxo-ux.md
+│   ├── arquitetura.md
+│   └── runbook-emergencia.md
+│
+├── frontend/                                  # React + TypeScript (Vite)
+│   ├── public/
+│   │   └── favicon.ico
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   │   ├── Header.tsx
+│   │   │   │   ├── Footer.tsx
+│   │   │   │   └── WalletButton.tsx
+│   │   │   ├── games/
+│   │   │   │   ├── CoinFlip.tsx
+│   │   │   │   ├── Dice.tsx
+│   │   │   │   └── Roulette.tsx
+│   │   │   └── admin/
+│   │   │       └── EmergencyPanel.tsx
+│   │   ├── hooks/
+│   │   │   ├── useWallet.ts
+│   │   │   ├── useBankroll.ts
+│   │   │   └── useGames.ts
+│   │   ├── pages/
+│   │   │   ├── Home.tsx
+│   │   │   ├── Games.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── Fairness.tsx
+│   │   ├── services/
+│   │   │   ├── api.ts
+│   │   │   └── wallet-adapters/
+│   │   │       ├── PhantomAdapter.ts
+│   │   │       └── MetaMaskAdapter.ts
+│   │   ├── utils/
+│   │   │   ├── constants.ts
+│   │   │   └── helpers.ts
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── backend/                                   # NestJS-like structure (ou Express modular)
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── database.ts
+│   │   │   ├── chains.ts                       # RPC endpoints per network, chain IDs
+│   │   │   └── limits.ts                       # parametros iniciais (1% max-bet etc.)
+│   │   │
+│   │   ├── modules/
+│   │   │   ├── auth/
+│   │   │   │   ├── auth.controller.ts
+│   │   │   │   └── auth.service.ts
+│   │   │   │
+│   │   │   ├── users/
+│   │   │   ├── wallet/
+│   │   │   │   ├── deposit.controller.ts
+│   │   │   │   └── withdraw.controller.ts
+│   │   │   │
+│   │   │   ├── games/
+│   │   │   │   ├── coinflip.service.ts        # lógica + chamadas rng
+│   │   │   │   ├── dice.service.ts
+│   │   │   │   └── roulette.service.ts
+│   │   │   │
+│   │   │   ├── bankroll/
+│   │   │   │   ├── bankroll-manager.service.ts
+│   │   │   │   ├── limits/
+│   │   │   │   │   ├── max-bet.service.ts     # 1% do bankroll
+│   │   │   │   │   ├── max-payout.service.ts  # 5% do bankroll
+│   │   │   │   │   └── daily-win-limiter.service.ts
+│   │   │   │   └── growth/auto-adjust.service.ts
+│   │   │   │
+│   │   │   ├── rng/
+│   │   │   │   ├── providers/
+│   │   │   │   │   ├── ChainlinkProvider.ts   # EVM VRF integration (testnet/mainnet)
+│   │   │   │   │   ├── SwitchboardProvider.ts # Solana VRF integration
+│   │   │   │   │   └── CommitRevealProvider.ts# fallback (on-backend commit-reveal)
+│   │   │   │   └── rng.service.ts
+│   │   │   │
+│   │   │   ├── admin/
+│   │   │   │   ├── admin.controller.ts
+│   │   │   │   ├── emergency.controller.ts     # pause, manual payout, export balances
+│   │   │   │   └── emergency.service.ts
+│   │   │   │
+│   │   │   └── audit/
+│   │   │       ├── fairness.controller.ts
+│   │   │       └── tx-log.service.ts
+│   │   │
+│   │   ├── entities/
+│   │   │   ├── user.entity.ts
+│   │   │   ├── bet.entity.ts
+│   │   │   ├── tx.entity.ts
+│   │   │   └── bankroll.entity.ts
+│   │   │
+│   │   ├── workers/
+│   │   │   ├── tx-processor.worker.ts
+│   │   │   └── bankroll.worker.ts
+│   │   │
+│   │   ├── utils/
+│   │   │   ├── math/
+│   │   │   │   ├── probability.ts
+│   │   │   │   ├── house-edge.ts
+│   │   │   │   └── risk-calculator.ts         # risk-of-ruin formulas
+│   │   │   └── security/
+│   │   │
+│   │   ├── main.ts
+│   │   └── app.module.ts
+│   ├── test/
+│   ├── package.json
+│   └── Dockerfile
+│
+├── contracts/
+│   ├── evm/
+│   │   ├── contracts/
+│   │   │   ├── CasinoCore.sol                 # aposta, validação limites (max bet/payout), pausa
+│   │   │   ├── BankrollManager.sol            # estatísticas e guardian calls
+│   │   │   ├── RNGConsumer.sol                # interface Chainlink VRF
+│   │   │   └── EmergencyPausable.sol
+│   │   ├── scripts/
+│   │   │   ├── deploy.testnet.js
+│   │   │   └── deploy.mainnet.js
+│   │   ├── test/
+│   │   │   └── CasinoCore.test.js
+│   │   └── hardhat.config.js
+│   │
+│   ├── solana/
+│   │   ├── programs/
+│   │   │   └── casino/
+│   │   │       ├── src/
+│   │   │       │   └── lib.rs                  # handle_bet, request_rng (Switchboard), payout, pause
+│   │   │       ├── Anchor.toml
+│   │   │       └── Cargo.toml
+│   │   └── tests/
+│   │       └── casino.ts
+│   │
+│   └── shared/
+│       └── interfaces/
+│           ├── ICasino.sol
+│           └── IRNG.sol
+│
+├── infra/
+│   ├── docker/
+│   │   ├── docker-compose.yml                  # frontend, backend, postgres, redis, local-chain simulators (optional)
+│   │   ├── nginx/
+│   │   │   └── nginx.conf
+│   │   └── .env.docker.example
+│   ├── scripts/
+│   │   ├── start-local-testnet.sh              # startar tudo em modo dev/testnet config
+│   │   └── deploy-testnet.sh
+│   └── postgres/
+│       └── init.sql
+│
+├── scripts/
+│   ├── simulate/
+│   │   ├── simulate-bets.js                    # roda centenas de apostas para testar bankroll
+│   │   └── generate-users.js
+│   └── emergency/
+│       └── export-balances.sh
+│
+├── tooling/
+│   ├── hardhat/                                # helper scripts / configs
+│   ├── anchor/                                 # anchor helper scripts
+│   └── utils/
+│       └── calc-bankroll.ipynb                 # notebook (simulações matemáticas)
+│
+├── tests/
+│   ├── integration/
+│   │   └── e2e-scenarios.md
+│   └── load/
+│       └── k6-config.js
+│
+└── docs-artifacts/
+    └── diagrams/
+        └── architecture.drawio

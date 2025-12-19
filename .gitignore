@@ -1,0 +1,58 @@
+# --- DEPENDÊNCIAS (PESADAS) ---
+node_modules/
+**/node_modules/
+.npm
+package-lock.json # Opcional: Alguns preferem enviar, outros não. Geralmente envia-se, mas se der conflitos podes ignorar.
+yarn.lock
+
+# --- SEGREDOS & AMBIENTE (CRÍTICO - NÃO REMOVER) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+backend/.env
+frontend/.env.local
+
+# Nota: Mantemos o .env.example para outros devs saberem o que configurar
+!*.example
+
+# --- CHAVES & CARTEIRAS (CRÍTICO) ---
+*.json
+!package.json
+!tsconfig.json
+!next.config.js
+!tailwind.config.js
+!postcss.config.js
+!metadata.json
+# Acima bloqueámos todos os JSONs por segurança (chaves solana), e desbloqueámos apenas os de configuração.
+# Se tiveres ficheiros de chave específicos:
+id.json
+*keypair*.json
+wallet.json
+*.pem
+
+# --- BUILD ARTIFACTS (PESADOS - FRONTEND) ---
+.next/
+out/
+build/
+.vercel/
+
+# --- BUILD ARTIFACTS (PESADOS - BACKEND) ---
+dist/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- SOLANA / RUST (PESADOS) ---
+# A pasta target do Rust pode ter Gigabytes, nunca envies isto!
+target/
+**/target/
+**/*.rs.bk
+
+# --- SISTEMA OPERATIVO ---
+.DS_Store
+Thumbs.db

@@ -1,0 +1,99 @@
+import type { NextPage } from 'next';
+import { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
+import { useCasinoStore } from '../state/casinoStore';
+import { useUIStore } from '../state/uiStore';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { api } from '../services/api';
+import DiceUI from '../components/GameUI/DiceUI'; 
+import { rngClient } from '../services/rngClient'; 
+
+const HOUSE_EDGE = 1; 
+
+const DicePage: NextPage = () => {
+  const { balance, setBalance } = useCasinoStore();
+  const { t } = useUIStore();
+  const { connected } = useWallet();
+  
+  const [lastRoll, setLastRoll] = useState<number | null>(null);
+  const nonceRef = useRef(1); 
+  
+  // Client Seed gerada apenas no cliente para evitar erro de Hydration
+  const [clientSeed, setClientSeed] = useState<string>(""); 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setClientSeed(rngClient.generateClientSeed());
+    setMounted(true);
+  }, []);
+
+  const handlePlay = async (amount: number, target: number, condition: 'over' | 'under') => {
+    if (!connected) {
+       toast.error("Connect wallet to play");
+       throw new Error("Wallet not connected");
+    }
+
+    if (amount <= 0 || amount > balance) {
+      toast.error(t('modal_low_balance'));
+      throw new Error(t('modal_low_balance'));
+    }
+    
+    const currentNonce = nonceRef.current;
+
+    try {
+      const data = await api.placeBet('dice', amount, { 
+        target, 
+        condition,
+        clientSeed,
+        nonce: currentNonce,
+      }); 
+      
+      // --- CORREÇÃO AQUI ---
+      // O resultado está dentro de data.result
+      const resultObj = data.result || {};
+      const rollResult = resultObj.rolled ?? resultObj.outcome ?? 0;
+      const payoutValue = resultObj.payout || 0; // Ler o payout do objeto result
+      
+      setLastRoll(rollResult); 
+      setBalance(data.newBalance);
+
+      nonceRef.current += 1;
+      
+      return {
+        win: payoutValue > 0, // Agora verifica corretamente se houve prémio
+        result: rollResult,
+        payout: payoutValue
+      };
+      
+    } catch (error: any) {
+      const msg = error.response?.data?.error || "Error processing bet";
+      toast.error(msg);
+      throw error;
+    }
+  };
+
+  if (!mounted) return null;
+
+  return (
+    <div className="container mx-auto px-4 py-8 animate-fade-in max-w-6xl">
+       <div className="flex items-center justify-center gap-4 mb-12">
+         <span className="text-4xl">🎲</span>
+         <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase italic">
+           CYBER<span className="text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">DICE</span>
+         </h1>
+       </div>
+
+       <DiceUI 
+          houseEdge={HOUSE_EDGE}
+          lastRoll={lastRoll}
+          onPlay={handlePlay}
+       />
+        
+       <div className="mt-8 text-center text-[10px] text-gray-600 font-mono opacity-50">
+           Client Seed: {clientSeed.slice(0, 8)}... | Nonce: {nonceRef.current}
+       </div>
+    </div>
+  );
+};
+
+export default DicePage;

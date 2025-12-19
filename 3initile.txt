@@ -1,0 +1,295 @@
+Perfeito — aqui vão **os três ficheiros pedidos**, completos, prontos para serem copiados diretamente para o teu projeto:
+
+---
+
+# 📌 **README.md**
+
+````md
+# Crypto Casino Platform (Solana + EVM) — Proof of Concept
+
+Este projeto é um **casino Web3 híbrido**, compatível com **Solana** e **EVM**, com três jogos implementados:
+
+- Coinflip  
+- Dice  
+- Roulette  
+
+Inclui:
+
+- Bankroll Manager com limites dinâmicos  
+- Emergency Shutdown System  
+- Suporte para testnet e preparação para mainnet  
+- RNG híbrido: Switchboard (Solana) + Chainlink VRF (EVM) + fallback Commit-Reveal  
+- Infraestrutura simplificada com Docker
+
+---
+
+## 🔧 Tecnologias
+
+### Frontend
+- Next.js + React  
+- Zustand para state management  
+- Conectores: Phantom, Solflare, MetaMask, Coinbase Wallet
+
+### Backend
+- Node.js + TypeScript  
+- Express  
+- Solana Web3 SDK  
+- ethers.js  
+- Switchboard RNG  
+- Chainlink VRF  
+- Bankroll + Risk Engine internos
+
+### Smart Contracts
+- Solana (Anchor)  
+- EVM (Solidity + Hardhat)
+
+### Infra
+- Docker + docker-compose
+
+---
+
+## 📂 Estrutura
+(A árvore completa está na tua mensagem anterior)
+
+---
+
+## 🚀 Como correr o PoC
+
+### 1. Criar `.env`
+Copia o ficheiro `.env.example` para `.env`:
+
+```bash
+cp .env.example .env
+````
+
+Preenche com as tuas chaves e endpoints das testnets.
+
+---
+
+### 2. Usar Docker
+
+Para levantar tudo:
+
+```bash
+docker-compose up --build
+```
+
+Serviços expostos:
+
+* Frontend → [http://localhost:3000](http://localhost:3000)
+* Backend → [http://localhost:8080](http://localhost:8080)
+* Solana local validator (opcional) → 8899
+
+---
+
+## 🧪 Testnets suportadas
+
+### Solana:
+
+* devnet
+* testnet
+* mainnet-beta (opcional, não recomendado para PoC)
+
+### EVM:
+
+* Polygon Amoy
+* Base Sepolia
+* Ethereum Sepolia
+
+---
+
+## 📌 Jogos incluídos
+
+### Coinflip
+
+* Bet mínima e máxima ajustadas ao bankroll
+* House edge configurável (default: 2%)
+
+### Dice
+
+* Range 0–100
+* Payout calculado dinamicamente conforme o target
+
+### Roulette
+
+* European wheel (single zero)
+* Probabilidade e payout equivalentes ao jogo real
+
+---
+
+## 🧱 Bankroll Manager
+
+Inclui:
+
+* max bet dinâmica
+* max payout
+* exposure threshold
+* risk engine modular
+
+---
+
+## 🛑 Emergency Mode
+
+Endpoint administrativo capaz de:
+
+* Pausar todas as apostas
+* Bloquear pagamentos
+* Ativar modo read-only
+* Emitir proof de integridade
+
+---
+
+## ⚠️ Nota importante
+
+Este projeto é um **Proof of Concept**.
+Não substitui auditoria e não deve ser usado como casino real sem revisão legal e técnica profunda.
+
+---
+
+## 📞 Suporte / Ajuda
+
+Se quiseres:
+
+* adicionar mais jogos
+* implementar slots
+* integrar KYC
+* preparar para deploy real em VPS
+
+Fala comigo e desenvolvemos juntos.
+
+````
+
+---
+
+# 📌 **.env.example**
+```env
+#########################################
+#             BACKEND CONFIG
+#########################################
+
+PORT=8080
+NODE_ENV=development
+
+# Security
+JWT_SECRET=change_this_secret
+ADMIN_PASSWORD=change_admin_password
+
+#########################################
+#              SOLANA
+#########################################
+
+SOLANA_NETWORK=devnet
+SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_PRIVATE_KEY=PASTE_YOUR_PRIVATE_KEY_ARRAY
+
+# Switchboard
+SWITCHBOARD_PROGRAM_ID=
+SWITCHBOARD_QUEUE=
+SWITCHBOARD_PERMISSIONLESS_QUEUE=true
+
+#########################################
+#                 EVM
+#########################################
+
+EVM_NETWORK=polygon_amoy
+EVM_RPC_URL=https://rpc-amoy.polygon.technology
+
+EVM_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+CASINO_CONTRACT_ADDRESS=0x0000000000000000000000000000000000000000
+RNG_CONTRACT_ADDRESS=0x0000000000000000000000000000000000000000
+
+# Chainlink VRF
+CHAINLINK_VRF_SUBSCRIPTION_ID=
+CHAINLINK_VRF_KEYHASH=
+CHAINLINK_VRF_COORDINATOR=
+
+#########################################
+#             GAME SETTINGS
+#########################################
+
+HOUSE_EDGE=0.02
+MIN_BET=0.1
+MAX_BET=10
+
+#########################################
+#           BANKROLL SETTINGS
+#########################################
+
+INITIAL_BANKROLL=1000
+MAX_PAYOUT_RATIO=0.2
+EXPOSURE_LIMIT=0.35
+
+#########################################
+#            FRONTEND CONFIG
+#########################################
+
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+
+````
+
+---
+
+# 📌 **docker-compose.yml**
+
+```yaml
+version: "3.9"
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
+    container_name: casino-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - solana-validator
+    networks:
+      - casino-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    container_name: casino-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    networks:
+      - casino-net
+
+  solana-validator:
+    image: solanalabs/solana:latest
+    container_name: solana-local-validator
+    command: |
+      solana-test-validator
+      --reset
+      --limit-ledger-size
+      --rpc-port 8899
+    ports:
+      - "8899:8899"
+    networks:
+      - casino-net
+
+networks:
+  casino-net:
+    driver: bridge
+```
+
+---
+
+# ✔ Tudo pronto.
+
+Se quiseres agora:
+
+👉 **continuamos com os Dockerfiles?**
+👉 **backend completo (server, rotas, serviços, cálculos)**
+👉 **ou os smart contracts primeiro (Solana + EVM)?**
+
+Diz apenas **“segue backend”**, **“segue contracts”**, ou **“segue frontend”**.

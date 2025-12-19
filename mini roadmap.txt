@@ -1,0 +1,132 @@
+casino-platform-poc/
+│
+├── README.md
+├── .env.example
+├── docker-compose.yml
+├── frontend/
+│   ├── .next/
+│   ├── node_modules/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── GameUI/
+│   │   │   │   ├── CoinflipUI.tsx  ✅
+│   │   │   │   ├── DiceUI.tsx  ✅
+│   │   │   │   ├── MinesUI.tsx  ✅
+│   │   │   │   ├── PlinkoUI.tsx  ✅
+│   │   │   │   └── RouletteUI.tsx  ✅
+│   │   │   ├── WalletConnect/
+│   │   │   │   └── SolanaWallet.tsx ✅
+│   │   │   ├── ui/
+│   │   │   │   └── GameControls.tsx  ✅
+│   │   │   └── Shared/
+│   │   │   │   ├── GameCard.tsx  ✅
+│   │   │   │   ├── Layout.tsx  ✅
+│   │   │   │   ├── Sidebar.tsx  ✅
+│   │   │   │   ├── WithdrawModal.tsx  ✅
+│   │   │   │   └── DepoitModal.tsx  ✅
+│   │   ├── hooks/
+│   │   │   ├── useWalletAuth.ts  ✅
+│   │   ├── pages/
+│   │   │   ├── _app.tsx  ✅
+│   │   │   ├── index.tsx  ✅
+│   │   │   ├── coinflip.tsx  ✅
+│   │   │   ├── dice.tsx  ✅
+│   │   │   ├── mines.tsx  ✅
+│   │   │   ├── plinko.tsx  ✅
+│   │   │   └── roulette.tsx  ✅
+│   │   ├── state/
+│   │   │   ├── walletStore.ts ✅
+│   │   │   ├── casinoStore.ts ✅
+│   │   │   └── uiStore.ts  ✅
+│   │   ├── services/
+│   │   │   ├── wallet-adapters/ nothing done yet
+│   │   │   ├── api.ts  ✅
+│   │   │   └── rngClient.ts ✅
+│   │   ├── styles/
+│   │   │   ├── globals.css  ✅
+│   │   ├── utils/
+│   │   │   ├── format.ts ✅
+│   │   │   └── validators.ts ✅
+│   │   └── types.d.ts  ✅
+│   ├── .env.local ✅
+│   ├── next-env.d.ts  ✅
+│   ├── next.config.js  ✅
+│   ├── package-lock.json  ✅
+│   ├── postcss.config.js  ✅
+│   ├── tailwind.config.js  ✅
+│   ├── tsconfig.json  ✅
+│   └── package.json  ✅
+│
+├── backend/
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── bets/
+│   │   │   │   ├── placeBet.controller.ts ✅
+│   │   │   │   ├── validateBet.middleware.ts ✅
+│   │   │   │   └── payout.controller.ts
+│   │   │   └── admin/
+│   │   │       ├── emergency.controller.ts ✅
+│   │   │       └── bankroll.controller.ts
+│   │   ├── games/
+│   │   │   ├── coinflip.service.ts ✅
+│   │   │   ├── dice.service.ts ✅
+│   │   │   ├── mines.service.ts ✅
+│   │   │   ├── plinko.service.ts ✅
+│   │   │   └── roulette.service.ts✅
+│   │   ├── rng/
+│   │   │   ├── switchboard.ts ✅ # Solana RNG
+│   │   │   ├── chainlink.ts       # EVM RNG
+│   │   │   └── commitReveal.ts ✅ # fallback
+│   │   ├── models/
+│   │   │   └── User.ts ✅
+│   │   ├── config/
+│   │   │   └── db.ts ✅
+│   │   ├── controllers/
+│   │   │   └── authControler.ts ✅
+│   │   ├── types/
+│   │   │   └── index.ts ✅
+│   │   ├── blockchain/
+│   │   │   └── solana.ts ✅
+│   │   ├── wallet/
+│   │   │   └── solanaWallet.ts ✅
+│   │   ├── bankroll/
+│   │   │   ├── bankroll.service.ts ✅
+│   │   │   ├── limits.ts ✅
+│   │   │   └── riskEngine.ts ✅
+│   │   ├── emergency/
+│   │   │   ├── shutdown.service.ts✅
+│   │   │   └── emergency.middleware.ts✅ (antigo proofs.ts)
+│   │   ├── utils/
+│   │   │   ├── rngUtils.ts ✅
+│   │   │   ├── logger.ts ✅
+│   │   │   ├── errors.ts ✅
+│   │   │   ├── priceOracle.ts ✅
+│   │   │   └── math.ts ✅
+│   │   └── server.ts ✅
+│   ├── package-lock.json ✅
+│   ├── package.json ✅
+│   └── tsconfig.json ✅
+│
+├── contracts/
+│   ├── solana/
+│   │   ├── programs/
+│   │   │   └── casino/
+│   │   │       ├── Cargo.toml
+│   │   │       ├── Xargo.toml
+│   │   │       └── src/
+│   │   │           └── lib.rs
+│   │   └── Anchor.toml
+│   └── evm/
+│       ├── contracts/
+│       │   ├── Casino.sol
+│       │   └── RNG.sol
+│       ├── hardhat.config.js
+│       └── scripts/
+│           └── deploy.js
+│
+└── docker/
+    ├── backend.Dockerfile
+    ├── frontend.Dockerfile
+    └── solana.Dockerfile  (opcional)
