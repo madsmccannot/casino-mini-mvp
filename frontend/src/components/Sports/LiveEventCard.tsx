@@ -1,0 +1,1 @@
+import { EventCard } from './EventCard'; export const LiveEventCard = ({ event }: any) => <div className="relative"><span className="absolute z-10 right-5 top-5 text-red-400 font-bold text-xs animate-pulse">● LIVE</span><EventCard event={event} /></div>;

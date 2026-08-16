@@ -1,6 +1,6 @@
 # Provably fair originals
 
-All five existing games use `hmac-sha256-v1`. No result is selected by `Math.random`, a disconnected RNG, or a client-supplied outcome.
+All eight Originals use `hmac-sha256-v1`. No result is selected by `Math.random`, a disconnected RNG, or a client-supplied outcome. Crash uses a pre-betting round commitment shared by every participant; the other games use player-bound one-time commitments.
 
 ## Commitment flow
 

@@ -1,9 +1,9 @@
+/* 1. Importar Fonte OUTFIT (Moderna e Redonda) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 1. Importar Fonte OUTFIT (Moderna e Redonda) */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
 
 /* 2. Estilos Base */
 body {

@@ -29,6 +29,9 @@ export const GAME_LIMITS: Record<string, RiskLimits> = {
         maxPayoutMultiplier: 1000.0, 
         maxBetAmountSOL: 10.0 
     },
+    'crash': { maxPayoutMultiplier: 1000.0, maxBetAmountSOL: 5.0 },
+    'limbo': { maxPayoutMultiplier: 1000.0, maxBetAmountSOL: 5.0 },
+    'blackjack': { maxPayoutMultiplier: 2.5, maxBetAmountSOL: 10.0 },
 };
 
 export const getGameLimits = (game: string): RiskLimits => {

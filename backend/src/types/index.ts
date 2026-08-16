@@ -1,14 +1,14 @@
 // --- REQUESTS (O que o Frontend envia) ---
 export interface PlayRequest {
   // Apenas os nomes dos jogos. As ações (reveal/cashout) vão no campo 'action'
-  game: 'dice' | 'coinflip' | 'plinko' | 'mines' | 'roulette';
+  game: 'dice' | 'coinflip' | 'plinko' | 'mines' | 'roulette' | 'crash' | 'limbo' | 'blackjack';
   
   betAmount?: number; // Opcional porque 'reveal' no Mines não tem aposta
   
   params: any; // Parâmetros específicos (cor, lado da moeda, array de minas, etc.)
   
   // Ação específica para jogos com estado (Mines)
-  action?: 'bet' | 'reveal' | 'cashout'; 
+  action?: 'bet' | 'reveal' | 'cashout' | 'hit' | 'stand';
 }
 
 // --- RESPONSES (O que o Backend devolve) ---

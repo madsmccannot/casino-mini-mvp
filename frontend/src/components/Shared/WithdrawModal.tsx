@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useCasinoStore } from '../../state/casinoStore';
 import { useUIStore } from '../../state/uiStore';
@@ -30,16 +30,6 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
   const { publicKey: solanaKey } = useWallet();
   const { balance, setBalance, solPrice } = useCasinoStore(); 
   const { t } = useUIStore();
-
-  // Reset states when opening/closing
-  useEffect(() => {
-    if (isOpen) {
-        setAmount('');
-        setTargetAddress('');
-        setErrorAmount(null);
-        setErrorAddress(null);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -1,6 +1,8 @@
 import { createFairRandom, verifyCommitment } from './fairness';
 import { PLINKO_TABLES, PlinkoRisk, PlinkoRows } from './gameRegistry';
 import { rouletteColor } from './roulette.service';
+import { limboOutcome } from './limbo.service';
+import { handValue, shuffleDeck } from './blackjack.service';
 
 const close = (a: number, b: number) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 1e-9;
 
@@ -59,6 +61,43 @@ export const verifyGameResult = (result: any): boolean => {
         for (let i = 0; i < revealedCount; i++) expectedMultiplier *= (25 - i) / (25 - bombCount - i);
         expectedMultiplier *= 0.99;
       }
+      break;
+    }
+    case 'limbo': {
+      const value = limboOutcome(random.integer(0x1_0000_0000));
+      expectedMultiplier = value >= result.outcome.targetMultiplier ? result.outcome.targetMultiplier : 0;
+      if (!close(result.outcome.resultMultiplier, value)) return false;
+      break;
+    }
+    case 'blackjack': {
+      const deck = shuffleDeck(random);
+      const playerCards = result.outcome.playerCards;
+      const dealerCards = result.outcome.dealerCards;
+      if (!Array.isArray(playerCards) || !Array.isArray(dealerCards) || dealerCards.includes('hidden')) return false;
+      const expectedPlayer = [deck[0], deck[2], ...deck.slice(4, 4 + Math.max(0, playerCards.length - 2))];
+      const dealerStart = 4 + Math.max(0, playerCards.length - 2);
+      const expectedDealer = [deck[1], deck[3], ...deck.slice(dealerStart, dealerStart + Math.max(0, dealerCards.length - 2))];
+      if (JSON.stringify(playerCards) !== JSON.stringify(expectedPlayer) || JSON.stringify(dealerCards) !== JSON.stringify(expectedDealer)) return false;
+      const player = handValue(playerCards).value;
+      const dealer = handValue(dealerCards).value;
+      if (player > 21) expectedMultiplier = 0;
+      else if (playerCards.length === 2 && player === 21) expectedMultiplier = dealerCards.length === 2 && dealer === 21 ? 1 : 2.5;
+      else if (dealer > 21 || player > dealer) expectedMultiplier = 2;
+      else if (player === dealer) expectedMultiplier = 1;
+      else expectedMultiplier = 0;
+      if (result.outcome.playerValue !== player || result.outcome.dealerValue !== dealer) return false;
+      break;
+    }
+    case 'crash': {
+      const crashMultiplier = Math.max(1, limboOutcome(random.integer(0x1_0000_0000)));
+      if (result.outcome.status === 'cashed_out') {
+        expectedMultiplier = result.multiplier;
+        if (expectedMultiplier < 1 || expectedMultiplier > result.outcome.autoCashout || expectedMultiplier > crashMultiplier) return false;
+      } else {
+        expectedMultiplier = 0;
+        if (result.outcome.status !== 'crashed' || crashMultiplier >= result.outcome.autoCashout) return false;
+      }
+      if (!close(result.outcome.crashMultiplier, crashMultiplier) || proof.clientSeed !== result.outcome.roundId) return false;
       break;
     }
     default: return false;

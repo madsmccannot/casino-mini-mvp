@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useUIStore } from '../../state/uiStore';
@@ -47,8 +47,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 
   // --- EFEITO DE LOGIN AUTOMÁTICO ---
   // Se a carteira conectar e ainda não tivermos autenticado no backend -> Login
@@ -135,7 +138,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* MODALS */}
       <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
-      <WithdrawModal isOpen={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} />
+      {isWithdrawOpen && <WithdrawModal isOpen onClose={() => setIsWithdrawOpen(false)} />}
 
       {/* --- FOOTER --- */}
       <footer className="border-t border-white/5 py-8 text-center bg-[#0a0d14] md:ml-56 transition-all duration-300">

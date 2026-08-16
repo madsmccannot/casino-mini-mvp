@@ -1,5 +1,5 @@
 import type { NextPage } from 'next';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useCasinoStore } from '../state/casinoStore';
 import { useUIStore } from '../state/uiStore';
@@ -16,16 +16,10 @@ const DicePage: NextPage = () => {
   const { connected } = useWallet();
   
   const [lastRoll, setLastRoll] = useState<number | null>(null);
-  const nonceRef = useRef(1); 
+  const [nonce, setNonce] = useState(1);
   
   // Client Seed
-  const [clientSeed, setClientSeed] = useState<string>(""); 
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setClientSeed(rngClient.generateClientSeed());
-    setMounted(true);
-  }, []);
+  const [clientSeed] = useState(() => rngClient.generateClientSeed());
 
   const handlePlay = async (amount: number, target: number, condition: 'over' | 'under') => {
     if (!connected) {
@@ -38,7 +32,7 @@ const DicePage: NextPage = () => {
       throw new Error(t('modal_low_balance'));
     }
     
-    const currentNonce = nonceRef.current;
+    const currentNonce = nonce;
 
     try {
       const data = await api.placeBet('dice', amount, { 
@@ -55,7 +49,7 @@ const DicePage: NextPage = () => {
       setLastRoll(rollResult); 
       setBalance(data.newBalance);
 
-      nonceRef.current += 1;
+      setNonce(current => current + 1);
       
       return {
         win: payoutValue > 0,
@@ -69,8 +63,6 @@ const DicePage: NextPage = () => {
       throw error;
     }
   };
-
-  if (!mounted) return null;
 
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in max-w-6xl">
@@ -88,7 +80,7 @@ const DicePage: NextPage = () => {
        />
        
        <div className="mt-8 text-center text-[10px] text-gray-600 font-mono opacity-50">
-           Client Seed: {clientSeed.slice(0, 8)}... | Nonce: {nonceRef.current}
+           Client Seed: {clientSeed.slice(0, 8)}... | Nonce: {nonce}
        </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { authorizeBetBankroll, releaseBetBankroll, settleBetBankroll } from '../
 import { maxMultiplierFor } from '../../games/gameRegistry';
 import { executeInstantGame, standardizedStats } from '../../games/gameExecutor';
 import { consumeFairnessCommit } from '../../games/fairnessCommit.service';
+import { blackjackService } from '../../games/blackjack.service';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9:_-]{16,128}$/;
 
@@ -96,11 +97,21 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
       await settleBet(existing.betId, existing.payout, existing.details);
       return res.status(200).json(await completedResponse(userId.toString(), existing.game, existing.details));
     }
+    if (existing?.status === 'FUNDS_RESERVED' && existing.game === 'blackjack') {
+      const resumed = await blackjackService.resume(userId.toString(), existing.betId);
+      if (resumed) {
+        if (resumed.outcome.status !== 'active') {
+          await markResultReady(existing.betId, resumed);
+          await settleBet(existing.betId, resumed.payout, resumed);
+        }
+        return res.status(200).json(await completedResponse(userId.toString(), existing.game, resumed));
+      }
+    }
     if (existing && existing.game !== game) {
       return res.status(409).json({ success: false, error: 'Idempotency key already belongs to another game' });
     }
 
-    if (game !== 'mines') {
+    if (game !== 'mines' && game !== 'blackjack') {
       const potentialMultiplier = maxMultiplierFor(game, params);
       const riskValidation = await riskEngine.validateBet(game, betAmount, potentialMultiplier);
       if (riskValidation !== true) return res.status(400).json({ success: false, error: riskValidation });
@@ -122,6 +133,40 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
         }
         throw error;
       }
+    }
+
+    if (game === 'blackjack') {
+      if (action === 'bet') {
+        const maxMultiplier = maxMultiplierFor('blackjack', params);
+        const validation = await riskEngine.validateBet('blackjack', betAmount, maxMultiplier);
+        if (validation !== true) return res.status(400).json({ success: false, error: validation });
+        await reserveBet(userId, idempotencyKey, game, betAmount, maxMultiplier);
+        try {
+          const commitment = await consumeFairnessCommit(userId, params?.fairnessCommitId, params?.clientSeed, params?.nonce);
+          const result = await blackjackService.start(userId.toString(), idempotencyKey, betAmount, params, commitment);
+          if (result.outcome.status !== 'active') {
+            await markResultReady(idempotencyKey, result);
+            await settleBet(idempotencyKey, result.payout, result);
+          }
+          return res.status(200).json(await completedResponse(userId.toString(), game, result));
+        } catch (error) {
+          await refundCasinoBet(idempotencyKey).catch(() => undefined);
+          await releaseBetBankroll(idempotencyKey).catch(() => undefined);
+          await Bet.updateOne({ betId: idempotencyKey }, { $set: { status: 'REFUNDED' } });
+          throw error;
+        }
+      }
+      if (action === 'hit' || action === 'stand') {
+        const result = action === 'hit'
+          ? await blackjackService.hit(userId.toString(), params?.sessionId)
+          : await blackjackService.stand(userId.toString(), params?.sessionId);
+        if (result.outcome.status !== 'active') {
+          await markResultReady(result.betId, result);
+          await settleBet(result.betId, result.payout, result);
+        }
+        return res.status(200).json(await completedResponse(userId.toString(), game, result));
+      }
+      return res.status(400).json({ success: false, error: 'Invalid Blackjack action' });
     }
 
     if (action === 'bet') {

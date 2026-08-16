@@ -35,10 +35,24 @@ const AdminPage: NextPage = () => {
   };
 
   useEffect(() => {
-    if (connected && isAuthenticated) {
-        fetchStats();
-    }
-  }, [connected, isAuthenticated]);
+    if (!connected || !isAuthenticated) return;
+    let active = true;
+
+    api.get('admin/bankroll')
+      .then(data => {
+        if (!active) return;
+        setStats(data);
+        setIsEmergency(data.isEmergency);
+      })
+      .catch(error => {
+        if (!active) return;
+        console.error(error);
+        toast.error('Access denied. Admin only.');
+        setTimeout(() => router.push('/'), 2000);
+      });
+
+    return () => { active = false; };
+  }, [connected, isAuthenticated, router]);
 
   // 2. Botão de Emergência
   const toggleEmergency = async (action: 'enable' | 'disable') => {

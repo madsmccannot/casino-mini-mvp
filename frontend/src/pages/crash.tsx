@@ -17,8 +17,8 @@ export default function CrashPage() {
   const [autoBet, setAutoBet] = useState(false);
   const autoBetRef = useRef(false);
   const settingsRef = useRef({ amount, autoCashout });
-  const placedRound = useRef<string>();
-  const placedBetId = useRef<string>();
+  const placedRound = useRef<string | null>(null);
+  const placedBetId = useRef<string | null>(null);
   useEffect(() => { autoBetRef.current = autoBet; settingsRef.current = { amount, autoCashout }; }, [autoBet, amount, autoCashout]);
   useEffect(() => {
     let socket: WebSocket | undefined;
@@ -32,14 +32,14 @@ export default function CrashPage() {
           const funds = await api.get('account/balance').catch(() => null);
           if (funds) setBalance(Number(funds.availableMinor) / 1e9);
         }
-        if (placedRound.current && next.roundId !== placedRound.current) { placedRound.current = undefined; setPlaced(false); }
+        if (placedRound.current && next.roundId !== placedRound.current) { placedRound.current = null; setPlaced(false); }
         if (autoBetRef.current && !placedRound.current && next.status === 'BETTING') {
           const betId = crypto.randomUUID();
           placedRound.current = next.roundId;
           placedBetId.current = betId;
           api.post('crash/bet', { roundId: next.roundId, betAmount: settingsRef.current.amount, autoCashout: settingsRef.current.autoCashout, idempotencyKey: betId })
             .then(() => setPlaced(true))
-            .catch(() => { placedRound.current = undefined; placedBetId.current = undefined; autoBetRef.current = false; setAutoBet(false); });
+            .catch(() => { placedRound.current = null; placedBetId.current = null; autoBetRef.current = false; setAutoBet(false); });
         }
       };
       socket.onclose = () => { if (active) retry = setTimeout(connect, 1500); };

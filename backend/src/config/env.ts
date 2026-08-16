@@ -53,4 +53,7 @@ export const assertProductionConfig = (): void => {
   if (isProduction && bankrollProvider === 'internal') {
     throw new Error('BANKROLL_PROVIDER=internal is forbidden in production');
   }
+  const sportsProvider = process.env.SPORTSBOOK_PROVIDER?.trim() || 'disabled';
+  if (!['disabled', 'sandbox', 'sportradar'].includes(sportsProvider)) throw new Error('SPORTSBOOK_PROVIDER must be disabled, sandbox, or sportradar');
+  if (isProduction && sportsProvider === 'sandbox') throw new Error('SPORTSBOOK_PROVIDER=sandbox is forbidden in production');
 };

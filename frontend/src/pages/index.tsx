@@ -103,6 +103,7 @@ const Home: NextPage = () => {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[128px] pointer-events-none" />
 
       <div className="text-center mb-10 animate-fade-in max-w-2xl mx-auto z-10">
+        <Link href="/sports" className="inline-block mb-5 px-5 py-2 rounded-full bg-blue-600/20 border border-blue-500/40 text-blue-300 text-sm font-bold">OPEN SPORTSBOOK →</Link>
         <h2 className="text-sm font-bold tracking-[0.3em] text-blue-400 mb-4 uppercase drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]">
           {t('hero_pre')}
         </h2>

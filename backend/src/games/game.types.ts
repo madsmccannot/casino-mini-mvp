@@ -1,6 +1,6 @@
 import { FairnessProof } from './fairness';
 
-export type GameId = 'coinflip' | 'dice' | 'mines' | 'plinko' | 'roulette';
+export type GameId = 'coinflip' | 'dice' | 'mines' | 'plinko' | 'roulette' | 'crash' | 'limbo' | 'blackjack';
 
 export interface StandardGameResult {
   success: true;

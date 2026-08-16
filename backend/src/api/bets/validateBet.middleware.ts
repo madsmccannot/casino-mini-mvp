@@ -51,6 +51,7 @@ export const validateBet = async (req: AuthRequest, res: Response, next: NextFun
     if (game === 'mines' && (action === 'reveal' || action === 'cashout')) {
       return next();
     }
+    if (game === 'blackjack' && (action === 'hit' || action === 'stand')) return next();
 
     if (betAmount !== undefined) {
         if (typeof betAmount !== 'number' || !Number.isFinite(betAmount) || betAmount <= 0 || !Number.isSafeInteger(betAmount * 1_000_000_000)) {

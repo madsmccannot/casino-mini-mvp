@@ -53,6 +53,20 @@ export const validators = {
     finiteWager(wager);
     if (!Number.isInteger(params?.bombCount) || params.bombCount < 1 || params.bombCount > 24) throw new Error('bombCount must be between 1 and 24');
     return { bombCount: params.bombCount as number, clientSeed: params.clientSeed, nonce: params.nonce };
+  },
+  limbo(wager: number, params: any) {
+    finiteWager(wager);
+    if (!Number.isFinite(params?.targetMultiplier) || params.targetMultiplier < 1.01 || params.targetMultiplier > 1000) throw new Error('targetMultiplier must be between 1.01 and 1000');
+    return { targetMultiplier: params.targetMultiplier as number, clientSeed: params.clientSeed, nonce: params.nonce };
+  },
+  crash(wager: number, params: any) {
+    finiteWager(wager);
+    if (!Number.isFinite(params?.autoCashout) || params.autoCashout < 1.01 || params.autoCashout > 1000) throw new Error('autoCashout must be between 1.01 and 1000');
+    return { autoCashout: params.autoCashout as number, clientSeed: params.clientSeed, nonce: params.nonce };
+  },
+  blackjack(wager: number, params: any) {
+    finiteWager(wager);
+    return { clientSeed: params?.clientSeed, nonce: params?.nonce };
   }
 };
 
@@ -75,6 +89,9 @@ export const maxMultiplierFor = (game: string, params: any): number => {
       for (let revealed = 0; revealed < 25 - bombCount; revealed++) multiplier *= (25 - revealed) / (25 - bombCount - revealed);
       return multiplier * 0.99;
     }
+    case 'limbo': return validators.limbo(1, params).targetMultiplier;
+    case 'crash': return validators.crash(1, params).autoCashout;
+    case 'blackjack': validators.blackjack(1, params); return 2.5;
     default: throw new Error('Game not supported');
   }
 };
@@ -85,4 +102,7 @@ export const GAME_REGISTRY = Object.freeze({
   mines: { id: 'mines', lifecycle: 'interactive', rtp: 0.99 },
   plinko: { id: 'plinko', lifecycle: 'instant', rtp: 0.99 },
   roulette: { id: 'roulette', lifecycle: 'instant', rtp: 36 / 37 }
+  ,crash: { id: 'crash', lifecycle: 'round', rtp: 0.99 }
+  ,limbo: { id: 'limbo', lifecycle: 'instant', rtp: 0.99 }
+  ,blackjack: { id: 'blackjack', lifecycle: 'interactive', rtp: null, rtpModel: 'strategy-dependent' }
 } as const);

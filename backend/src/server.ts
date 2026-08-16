@@ -26,6 +26,12 @@ import { confirmWithdrawal, creditConfirmedDeposit, failWithdrawal, getUserBalan
 import { getLedgerReconciliation } from './api/admin/reconciliation.controller';
 import crypto from 'crypto';
 import { createFairnessCommit, verifyBetFairness } from './api/games/fairness.controller';
+import { betCrashRound, cashoutCrashRound, getCrashRound } from './api/games/crash.controller';
+import { attachCrashRealtime } from './games/crashRealtime';
+import { listSportsEvents, getSportsEvent } from './api/sports/events.controller';
+import { createSportsTicket, listMySportsTickets } from './api/sports/tickets.controller';
+import { getSportsOperations, publishSandboxSettlement, runSportsIngest, runSportsSettlement } from './api/admin/sports.controller';
+import { attachSportsOddsStream } from './sportsbook/feeds/liveOdds.service';
 
 export const app = express();
 const PORT = process.env.PORT || 3001;
@@ -70,6 +76,15 @@ app.post('/api/admin/emergency/export', validateBet as any, exportBalances as an
 app.get('/api/admin/bankroll', validateBet as any, getBankrollStatus as any);
 app.post('/api/admin/bankroll/withdraw', validateBet as any, withdrawHouseFunds as any);
 app.get('/api/admin/ledger/reconciliation', validateBet as any, getLedgerReconciliation as any);
+app.get('/api/admin/sports', validateBet as any, getSportsOperations as any);
+app.post('/api/admin/sports/ingest', validateBet as any, runSportsIngest as any);
+app.post('/api/admin/sports/settle', validateBet as any, runSportsSettlement as any);
+app.post('/api/admin/sports/sandbox/settlement', validateBet as any, publishSandboxSettlement as any);
+
+app.get('/api/sports/events', listSportsEvents as any);
+app.get('/api/sports/events/:eventId', getSportsEvent as any);
+app.post('/api/sports/tickets', checkEmergencyState, validateBet as any, createSportsTicket as any);
+app.get('/api/sports/tickets', validateBet as any, listMySportsTickets as any);
 
 // --- DEPOSIT (SOL NATIVE) ---
 // Depósitos são públicos (qualquer um pode mandar dinheiro), validamos pela assinatura na blockchain
@@ -194,14 +209,20 @@ app.post(
 
 // --- GAME ROUTE ---
 app.post('/api/play', checkEmergencyState, validateBet as any, placeBet as any);
+app.get('/api/crash/round', getCrashRound as any);
+app.post('/api/crash/bet', checkEmergencyState, validateBet as any, betCrashRound as any);
+app.post('/api/crash/cashout', checkEmergencyState, validateBet as any, cashoutCrashRound as any);
 
 export const startServer = async () => {
   assertProductionConfig();
   await connectDB();
   await switchboardRNG.init();
-  return app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`\nBackend running on port ${PORT}`);
   });
+  attachCrashRealtime(server);
+  attachSportsOddsStream(server);
+  return server;
 };
 
 if (require.main === module) {

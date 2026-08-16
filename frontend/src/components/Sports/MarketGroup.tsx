@@ -1,0 +1,2 @@
+import { OddsButton } from './OddsButton';
+export const MarketGroup = ({ event, market }: any) => <section className="mt-3"><div className="flex justify-between text-xs uppercase text-gray-500 mb-2"><span>{market.name}</span><span>v{market.version} · {market.status}</span></div><div className="grid grid-cols-2 md:grid-cols-3 gap-2">{market.selections.map((selection: any) => <OddsButton key={selection.selectionId} {...{ event, market, selection }} />)}</div></section>;
