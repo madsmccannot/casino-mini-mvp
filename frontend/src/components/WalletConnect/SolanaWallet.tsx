@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useInjectedSolanaWallet } from '../../hooks/useInjectedSolanaWallet';
 import { useWalletAuth } from '../../hooks/useWalletAuth'; // Usamos o hook apenas para disconnect
 import { toast } from 'react-hot-toast';
 
 export const SolanaWallet = () => {
   // --- HOOKS ---
-  const { publicKey, connected } = useWallet();
-  const { setVisible } = useWalletModal(); // Para abrir o modal de escolha de carteira
+  const { publicKey, connected, connect, availableProviders, providerName } = useInjectedSolanaWallet();
   
   // Usamos o hook de auth para fazer o logout completo (Store + Wallet)
   const { disconnect } = useWalletAuth();
@@ -37,8 +35,19 @@ export const SolanaWallet = () => {
     }
   };
 
-  const handleChangeWallet = () => {
-    setVisible(true); // Abre o modal oficial da Solana
+  const handleConnect = async (name: 'phantom' | 'solflare') => {
+    try {
+      await connect(name);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Wallet connection failed');
+    }
+  };
+
+  const handleChangeWallet = async () => {
+    const alternate = availableProviders.find(name => name !== providerName);
+    if (!alternate) return toast.error('No other supported wallet extension detected');
+    await disconnect();
+    await handleConnect(alternate);
     setShowMenu(false);
   };
 
@@ -57,13 +66,14 @@ export const SolanaWallet = () => {
   // CASO 1: NÃO CONECTADO -> Botão de Conectar
   if (!connected || !publicKey) {
     return (
-      <button
-        onClick={() => setVisible(true)}
-        className="flex items-center gap-2 bg-[#512da8] hover:bg-[#4527a0] text-white px-4 py-2 rounded-lg font-bold transition-all text-sm h-10 shadow-lg shadow-purple-900/20"
-      >
-        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="SOL" className="w-4 h-4" />
-        Connect SOL
-      </button>
+      <div className="flex gap-2">
+        {availableProviders.map(name => (
+          <button key={name} onClick={() => handleConnect(name)} className="bg-[#512da8] hover:bg-[#4527a0] text-white px-3 py-2 rounded-lg font-bold text-xs h-10">
+            Connect {name === 'phantom' ? 'Phantom' : 'Solflare'}
+          </button>
+        ))}
+        {availableProviders.length === 0 && <span className="text-xs text-gray-500 px-3">No supported wallet detected</span>}
+      </div>
     );
   }
 
@@ -85,7 +95,7 @@ export const SolanaWallet = () => {
         <div className="absolute top-full right-0 mt-2 w-48 bg-[#1a1f2b] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in-down origin-top-right">
           
           <div className="p-3 border-b border-white/5 bg-white/5">
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Solana Wallet</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{providerName ?? 'Solana'} Wallet</p>
           </div>
 
           <button 

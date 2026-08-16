@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useInjectedSolanaWallet } from './useInjectedSolanaWallet';
 import { useWalletStore } from '../state/walletStore';
 import { useCasinoStore } from '../state/casinoStore';
 import { useUIStore } from '../state/uiStore';
@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export const useWalletAuth = () => {
     // Hooks da Wallet Solana
-    const { publicKey, signMessage, disconnect: disconnectWallet } = useWallet();
+    const { publicKey, signMessage, disconnect: disconnectWallet } = useInjectedSolanaWallet();
     
     // Hooks das nossas Stores
     const { setWalletSession, disconnect: disconnectStore, token } = useWalletStore();

@@ -26,4 +26,4 @@ The external commercial/provider gate is intentionally unresolved: no production
 - The professional provider remains fail-closed until authenticated commercial specifications and credentials are available.
 - A production adapter must pass acceptance, settlement, replay and recovery certification before activation.
 - The former Next.js 14 production gate is resolved: the frontend now targets Next.js 16.3.1 and React 19.2.8, with TypeScript, lint and production-build validation.
-- Production promotion still requires replacing or isolating the legacy Solana wallet-adapter dependency chain. Its React Native/mobile transitive packages have unresolved high-severity audit findings and must not be treated as cleared by the framework migration.
+- The legacy Solana wallet-adapter/React Native dependency chain has been removed. Browser wallets are limited to injected ownership signatures, while custody operations remain fail-closed.

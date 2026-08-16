@@ -12,13 +12,6 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@metamask/detect-provider": "^2.0.0",
-    "@solana/wallet-adapter-base": "0.9.23",
-    "@solana/wallet-adapter-phantom": "0.9.24",
-    "@solana/wallet-adapter-react": "0.15.35",
-    "@solana/wallet-adapter-react-ui": "0.9.35",
-    "@solana/wallet-adapter-solflare": "0.6.28",
-    "@solana/web3.js": "^1.91.0",
     "bs58": "^6.0.0",
     "lucide-react": "^0.561.0",
     "matter-js": "^0.20.0",
@@ -33,7 +26,6 @@
     "@types/node": "^20.0.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "@types/web3": "^1.0.20",
     "autoprefixer": "^10.4.19",
     "es-abstract": "^1.24.0",
     "eslint": "9.39.2",

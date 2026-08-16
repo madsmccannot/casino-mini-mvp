@@ -1,46 +1,12 @@
 import type { AppProps } from 'next/app';
-import { useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { clusterApiUrl } from '@solana/web3.js';
-
-// --- 1. CARTEIRAS PADRÃO ---
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
-
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { Toaster } from 'react-hot-toast';
 import '../styles/globals.css';
-import '@solana/wallet-adapter-react-ui/styles.css';
-
 import Layout from '../components/Shared/Layout'; 
+import { InjectedSolanaWalletProvider } from '../hooks/useInjectedSolanaWallet';
 
 function MyApp({ Component, pageProps }: AppProps) {
-  
-  // --- CONFIGURAÇÃO DE REDE (PRODUÇÃO READY) ---
-  // Se existir NEXT_PUBLIC_SOLANA_NETWORK no .env usa essa, senão usa Devnet
-  const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || WalletAdapterNetwork.Devnet;
-  
-  // Endpoint RPC:
-  const endpoint = useMemo(() => {
-    if (process.env.NEXT_PUBLIC_SOLANA_RPC_URL) {
-        return process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
-    }
-    return clusterApiUrl(network);
-  }, [network]);
-  
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    [network]
-  );
-
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
+    <InjectedSolanaWalletProvider>
             
             <Layout>
                 {/* Fundo Global */}
@@ -66,9 +32,7 @@ function MyApp({ Component, pageProps }: AppProps) {
               }}
             />
 
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    </InjectedSolanaWalletProvider>
   );
 }
 

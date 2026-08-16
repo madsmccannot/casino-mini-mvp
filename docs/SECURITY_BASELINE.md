@@ -20,7 +20,7 @@ The application must remain in `CUSTODY_MODE=disabled` until a new custody/bankr
 - Deposit signatures are uniquely recorded to reject straightforward replay credits.
 - Bet and withdrawal amounts reject non-finite values and values that cannot be represented as whole lamports.
 - Reproducible npm lockfiles are versioned.
-- The frontend wallet surface was reduced to direct Phantom and Solflare adapters; the broad wallet metapackage and legacy adapters were removed.
+- The frontend uses only the browser-injected Phantom/Solflare signing surface. The Solana wallet-adapter, React Native/mobile and web3 dependency chains are removed; the browser has no casino RPC or transaction-construction capability.
 
 ## Unresolved production blockers
 

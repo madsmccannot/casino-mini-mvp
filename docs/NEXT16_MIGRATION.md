@@ -19,4 +19,4 @@ npm run build
 npm audit --omit=dev
 ```
 
-The Next.js/PostCSS/Sharp advisories reported by the previous dependency line are resolved. The remaining production audit findings originate in the existing Solana wallet adapter and its React Native/mobile dependency tree. They have no safe automatic fix and require a deliberate wallet/authentication replacement or isolation before production deployment.
+The Next.js/PostCSS/Sharp advisories reported by the previous dependency line are resolved. The legacy Solana wallet-adapter, web3 and React Native/mobile dependency tree was also removed. Browser wallet access is now restricted to explicitly selected injected providers and ownership-message signing; deposits and withdrawals remain unavailable while custody is disabled.

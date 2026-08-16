@@ -1,6 +1,4 @@
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-
-export const SOLANA_LAMPORTS_PER_SOL = LAMPORTS_PER_SOL; 
+export const SOLANA_LAMPORTS_PER_SOL = 1_000_000_000;
 
 /**
  * Converte Lamports para SOL de forma segura para visualização.

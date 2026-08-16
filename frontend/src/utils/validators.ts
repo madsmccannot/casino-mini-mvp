@@ -1,4 +1,4 @@
-import { PublicKey } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 /**
  * Valida se uma string é um endereço Solana válido.
@@ -13,8 +13,7 @@ export const isValidSolanaAddress = (address: string): boolean => {
 
     // 2. Check Robusto (SDK)
     try {
-        new PublicKey(address);
-        return true;
+        return bs58.decode(address).length === 32;
     } catch (e) {
         return false;
     }

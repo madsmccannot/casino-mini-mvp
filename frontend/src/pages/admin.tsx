@@ -1,13 +1,13 @@
 import type { NextPage } from 'next';
 import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
 import { api } from '../services/api';
 import { useCasinoStore } from '../state/casinoStore'; // Importar Store
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/router';
 
 const AdminPage: NextPage = () => {
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey } = useInjectedSolanaWallet();
   const { isAuthenticated } = useCasinoStore(); // Verificar se está LOGADO mesmo
   const router = useRouter();
   

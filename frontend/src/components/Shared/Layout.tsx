@@ -5,7 +5,7 @@ import { useUIStore } from '../../state/uiStore';
 import { useCasinoStore } from '../../state/casinoStore';
 
 // Solana wallet adapter
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useInjectedSolanaWallet } from '../../hooks/useInjectedSolanaWallet';
 
 // Novo Hook de Autenticação (A ponte entre Wallet e Backend)
 import { useWalletAuth } from '../../hooks/useWalletAuth';
@@ -37,7 +37,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { balance } = useCasinoStore();
 
   // Wallets (Solana)
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected } = useInjectedSolanaWallet();
   
   // Auth Logic (Backend)
   // Usamos o hook para gerir o login automaticamente sem duplicar lógica
