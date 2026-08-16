@@ -33,6 +33,7 @@ import { cashoutSportsTicket, createSportsTicket, getSportsCashoutQuote, listMyS
 import { getSportsOperations, publishSandboxSettlement, runSportsIngest, runSportsSettlement } from './api/admin/sports.controller';
 import { attachSportsOddsStream } from './sportsbook/feeds/liveOdds.service';
 import { getCatalog, launchCatalog, wagerCatalog } from './api/casinoCatalog.controller';
+import { addFavorite, getAccountProfile, getRetentionSummary, listBetHistory, listFavorites, removeFavorite, updateAccountProfile } from './api/account/account.controller';
 
 export const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,7 +45,7 @@ app.use(cors({
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     return callback(new Error('Origin not allowed by CORS policy'));
   },
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   maxAge: 600
 }));
@@ -68,6 +69,13 @@ app.get('/api/auth/challenge', createLoginChallenge);
 // --- UNIFIED LEDGER (read-only API during Phase 1 rollout) ---
 app.get('/api/account/balance', validateBet as any, getMyBalance as any);
 app.get('/api/account/transactions', validateBet as any, getMyTransactions as any);
+app.get('/api/account/profile', validateBet as any, getAccountProfile as any);
+app.patch('/api/account/profile', validateBet as any, updateAccountProfile as any);
+app.get('/api/account/bets', validateBet as any, listBetHistory as any);
+app.get('/api/account/favorites', validateBet as any, listFavorites as any);
+app.post('/api/account/favorites', validateBet as any, addFavorite as any);
+app.post('/api/account/favorites/remove', validateBet as any, removeFavorite as any);
+app.get('/api/account/retention', validateBet as any, getRetentionSummary as any);
 app.get('/api/fairness/:betId', verifyBetFairness as any);
 app.post('/api/fairness/commit', validateBet as any, createFairnessCommit as any);
 

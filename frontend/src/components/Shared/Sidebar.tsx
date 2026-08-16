@@ -42,6 +42,9 @@ export const Sidebar = () => {
               );
             })}
           </nav>
+          <Link href="/account" className={`mt-5 relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${router.pathname === '/account' ? 'bg-white/5 text-white border border-white/5' : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'}`}>
+            <span className="text-lg">◎</span><span className="font-bold text-sm tracking-wide">Account</span>
+          </Link>
         </div>
 
         <div className="mt-auto p-4 border-t border-white/5">

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../../models/User';
 import { getJwtSecret } from '../../config/env';
 import { getUnifiedBalance } from '../../ledger/balance.service';
-import { solToLamports } from '../../ledger/casinoLedger.service';
+import { usdcToMinor } from '../../ledger/casinoLedger.service';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -54,11 +54,11 @@ export const validateBet = async (req: AuthRequest, res: Response, next: NextFun
     if (game === 'blackjack' && (action === 'hit' || action === 'stand')) return next();
 
     if (betAmount !== undefined) {
-        if (typeof betAmount !== 'number' || !Number.isFinite(betAmount) || betAmount <= 0 || !Number.isSafeInteger(betAmount * 1_000_000_000)) {
+        if (typeof betAmount !== 'number' || !Number.isFinite(betAmount) || betAmount <= 0 || !Number.isSafeInteger(betAmount * 1_000_000)) {
           return res.status(400).json({ error: 'Invalid bet amount' });
         }
-        const balance = await getUnifiedBalance(user._id.toString());
-        if (balance.availableMinor < solToLamports(betAmount)) {
+        const balance = await getUnifiedBalance(user._id.toString(), 'USDC');
+        if (balance.availableMinor < usdcToMinor(betAmount)) {
             return res.status(400).json({ error: 'Insufficient funds' });
         }
     }

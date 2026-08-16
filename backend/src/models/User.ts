@@ -4,6 +4,7 @@ export interface IUser extends Document {
   accountId: string;
   primaryWallet?: { chainFamily: 'EVM'; chainId: number; address: string };
   walletAddress?: string;
+  displayName?: string;
   balance: number;
   totalWagered: number;
   
@@ -27,6 +28,7 @@ const UserSchema = new Schema({
   },
   // Legacy test-data compatibility only. New identities never use this field.
   walletAddress: { type: String, sparse: true, index: true },
+  displayName: { type: String, trim: true, maxlength: 32 },
   balance: { type: Number, default: 0 },
   totalWagered: { type: Number, default: 0 },
   

@@ -49,5 +49,9 @@ export const api = {
   // --- POST Genérico ---
   post: async (endpoint: string, data: any) => {
     return request<any>(endpoint, { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  patch: async (endpoint: string, data: any) => {
+    return request<any>(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
   }
 };
