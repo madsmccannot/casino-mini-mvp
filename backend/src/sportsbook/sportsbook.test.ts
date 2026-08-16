@@ -7,6 +7,8 @@ test('sandbox normalizes every Sports V1 category with integer odds and stable I
   assert.doesNotThrow(() => validateNormalizedEvents('sandbox', events));
   assert.equal(events[0].eventId, sportsId('event', 'sandbox', events[0].providerEventId));
   assert.equal(typeof events[0].markets[0].selections[0].oddsMillionths, 'bigint');
+  assert.equal(events[0].status, 'LIVE'); assert.ok(events[0].markets.some(market => market.type === 'PLAYER_PROP'));
+  assert.ok(events[0].markets.some(market => market.selections.some(selection => selection.boostId && selection.originalOddsMillionths)));
 });
 
 test('invalid odds, duplicate IDs, and unconfigured professional provider fail closed', async () => {

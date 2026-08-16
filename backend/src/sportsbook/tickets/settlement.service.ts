@@ -8,10 +8,14 @@ import { SportsSettlementReceipt } from '../models/SportsSettlementReceipt';
 import { createHash } from 'node:crypto';
 
 const decimal = (value: bigint) => Types.Decimal128.fromString(value.toString());
-const settlementHash = (update: SportsSettlementUpdate) => createHash('sha256').update(JSON.stringify({ providerTicketId: update.providerTicketId, legs: [...update.legs].sort((a, b) => a.selectionId.localeCompare(b.selectionId)) })).digest('hex');
+const settlementHash = (update: SportsSettlementUpdate) => createHash('sha256').update(JSON.stringify({ providerTicketId: update.providerTicketId, payoutMinor: update.payoutMinor?.toString(), legs: [...update.legs].sort((a, b) => a.selectionId.localeCompare(b.selectionId)) })).digest('hex');
 
 const calculatePayout = (ticket: any): bigint => {
   if (ticket.legs.some((leg: any) => leg.result === 'LOSS')) return 0n;
+  if (ticket.product === 'BET_BUILDER' && ticket.legs.every((leg: any) => leg.result === 'WIN')) {
+    if (!ticket.acceptedCombinedOddsMillionths) throw new Error('Bet Builder is missing provider combined odds');
+    return BigInt(ticket.stakeMinor.toString()) * BigInt(ticket.acceptedCombinedOddsMillionths.toString()) / 1_000_000n;
+  }
   let combined = 1_000_000n;
   for (const leg of ticket.legs) if (leg.result === 'WIN') combined = combined * BigInt(leg.acceptedOddsMillionths.toString()) / 1_000_000n;
   return BigInt(ticket.stakeMinor.toString()) * combined / 1_000_000n;
@@ -48,6 +52,11 @@ export const applySportsSettlement = async (update: SportsSettlementUpdate) => {
     await SportsSettlementReceipt.updateOne({ _id: receipt._id }, { $set: { status: 'APPLIED', appliedAt: new Date() } });
     return completed;
   }
+  if (ticket.status === 'CASHOUT_PENDING') throw new Error('Settlement deferred while cashout acceptance is pending');
+  if (ticket.status === 'CASHED_OUT') {
+    await SportsSettlementReceipt.updateOne({ _id: receipt._id }, { $set: { status: 'APPLIED', appliedAt: new Date() } });
+    return ticket;
+  }
   if (!['ACCEPTED', 'SETTLEMENT_PENDING'].includes(ticket.status)) return ticket;
   for (const result of update.legs) {
     const leg: any = ticket.legs.find((value: any) => value.selectionId === result.selectionId);
@@ -58,7 +67,9 @@ export const applySportsSettlement = async (update: SportsSettlementUpdate) => {
   ticket.providerSettlementIds.push(update.providerSettlementId);
   const terminal = ticket.legs.every((leg: any) => leg.result !== 'OPEN');
   if (!terminal) { await ticket.save(); await SportsSettlementReceipt.updateOne({ _id: receipt._id }, { $set: { status: 'APPLIED', appliedAt: new Date() } }); return ticket; }
-  const payout = calculatePayout(ticket);
+  const payout = ticket.product === 'BET_BUILDER'
+    ? (() => { if (update.payoutMinor === undefined) throw new Error('Bet Builder terminal settlement requires provider payout'); return update.payoutMinor; })()
+    : calculatePayout(ticket);
   if (payout > BigInt(ticket.maxPayoutMinor.toString())) throw new Error('Settlement payout exceeds accepted maximum');
   ticket.payoutMinor = decimal(payout);
   ticket.status = 'SETTLEMENT_PENDING';

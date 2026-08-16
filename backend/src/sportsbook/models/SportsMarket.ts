@@ -3,7 +3,8 @@ import { Schema, model } from 'mongoose';
 const SelectionSchema = new Schema({
   selectionId: { type: String, required: true }, providerSelectionId: { type: String, required: true },
   name: { type: String, required: true }, oddsMillionths: { type: Schema.Types.Decimal128, required: true },
-  status: { type: String, enum: ['ACTIVE', 'SUSPENDED', 'CLOSED'], required: true }
+  status: { type: String, enum: ['ACTIVE', 'SUSPENDED', 'CLOSED'], required: true },
+  participant: String, boostId: String, boostLabel: String, originalOddsMillionths: Schema.Types.Decimal128
 }, { _id: false });
 
 const SportsMarketSchema = new Schema({

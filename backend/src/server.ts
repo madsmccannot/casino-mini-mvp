@@ -29,7 +29,7 @@ import { createFairnessCommit, verifyBetFairness } from './api/games/fairness.co
 import { betCrashRound, cashoutCrashRound, getCrashRound } from './api/games/crash.controller';
 import { attachCrashRealtime } from './games/crashRealtime';
 import { listSportsEvents, getSportsEvent } from './api/sports/events.controller';
-import { createSportsTicket, listMySportsTickets } from './api/sports/tickets.controller';
+import { cashoutSportsTicket, createSportsTicket, getSportsCashoutQuote, listMySportsTickets } from './api/sports/tickets.controller';
 import { getSportsOperations, publishSandboxSettlement, runSportsIngest, runSportsSettlement } from './api/admin/sports.controller';
 import { attachSportsOddsStream } from './sportsbook/feeds/liveOdds.service';
 
@@ -85,6 +85,8 @@ app.get('/api/sports/events', listSportsEvents as any);
 app.get('/api/sports/events/:eventId', getSportsEvent as any);
 app.post('/api/sports/tickets', checkEmergencyState, validateBet as any, createSportsTicket as any);
 app.get('/api/sports/tickets', validateBet as any, listMySportsTickets as any);
+app.get('/api/sports/tickets/:ticketId/cashout', validateBet as any, getSportsCashoutQuote as any);
+app.post('/api/sports/tickets/:ticketId/cashout', checkEmergencyState, validateBet as any, cashoutSportsTicket as any);
 
 // --- DEPOSIT (SOL NATIVE) ---
 // Depósitos são públicos (qualquer um pode mandar dinheiro), validamos pela assinatura na blockchain

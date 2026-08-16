@@ -13,11 +13,14 @@ const QuoteLegSchema = new Schema({
 const SportsTicketSchema = new Schema({
   ticketId: { type: String, required: true, unique: true, immutable: true }, userId: { type: Schema.Types.ObjectId, required: true, index: true, immutable: true },
   provider: { type: String, required: true, immutable: true }, providerTicketId: { type: String, sparse: true, unique: true },
-  type: { type: String, enum: ['SINGLE', 'ACCUMULATOR'], required: true }, currency: { type: String, required: true, default: 'SOL' },
+  type: { type: String, enum: ['SINGLE', 'ACCUMULATOR', 'BET_BUILDER'], required: true }, product: { type: String, enum: ['STANDARD', 'BET_BUILDER'], required: true, default: 'STANDARD' },
+  context: { type: String, enum: ['PREMATCH', 'LIVE'], required: true, default: 'PREMATCH' }, currency: { type: String, required: true, default: 'SOL' },
   stakeMinor: { type: Schema.Types.Decimal128, required: true, immutable: true }, maxPayoutMinor: { type: Schema.Types.Decimal128, required: true },
-  payoutMinor: { type: Schema.Types.Decimal128 }, status: { type: String, enum: ['FUNDS_RESERVED', 'ACCEPTED', 'REJECTED', 'SETTLEMENT_PENDING', 'SETTLED', 'VOIDED', 'MANUAL_REVIEW'], required: true, index: true },
+  acceptedCombinedOddsMillionths: { type: Schema.Types.Decimal128 },
+  payoutMinor: { type: Schema.Types.Decimal128 }, status: { type: String, enum: ['FUNDS_RESERVED', 'ACCEPTED', 'REJECTED', 'CASHOUT_PENDING', 'CASHED_OUT', 'SETTLEMENT_PENDING', 'SETTLED', 'VOIDED', 'MANUAL_REVIEW'], required: true, index: true },
   legs: { type: [TicketLegSchema], required: true }, acceptedAt: Date, settledAt: Date,
   acceptancePayloadHash: { type: String, required: true }, providerSettlementIds: { type: [String], default: [] }
-  ,quoteLegs: { type: [QuoteLegSchema], required: true }, acceptOddsChange: { type: Boolean, required: true }
+  ,quoteLegs: { type: [QuoteLegSchema], required: true }, acceptOddsChange: { type: Boolean, required: true },
+  cashoutQuoteId: String, cashoutAcceptanceId: String, cashoutAmountMinor: Schema.Types.Decimal128, cashedOutAt: Date
 }, { timestamps: true, optimisticConcurrency: true });
 export const SportsTicket = model('SportsTicket', SportsTicketSchema);

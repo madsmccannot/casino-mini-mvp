@@ -23,7 +23,11 @@ Prematch markets become stale after 120 seconds without a provider update; live 
 7. Accumulators remain open until every leg is terminal. A LOSS pays zero; VOID contributes 1.0; an all-VOID ticket releases the original stake.
 8. Ledger settlement is idempotent and interrupted `SETTLEMENT_PENDING` tickets are recovered.
 
-Same-event correlated accumulators are rejected because Bet Builder belongs to Phase 6. Cashout and live ticket placement are likewise Phase 6; this prevents unsupported risk behavior from being silently approximated.
+Standard accumulators reject same-event correlations. An explicit `BET_BUILDER` product permits 2–20 selections from one event only when the provider accepts and prices the complete correlated combination. Live tickets use the same version/price revalidation and are persisted with a LIVE context.
+
+Cashout is a two-step provider-authoritative flow. The authenticated owner requests an expiring quote, then explicitly accepts its opaque ID. The ticket moves to `CASHOUT_PENDING` before provider acceptance, settlement cursor progress is deferred during that race, and the accepted amount settles through the original ledger reservation exactly once. Interrupted cashouts are recovered idempotently.
+
+Player props and boosts are provider metadata. Original/boosted prices, participant and labels are normalized and streamed; neither the browser nor platform invents production boosts or player markets.
 
 ## Sandbox
 

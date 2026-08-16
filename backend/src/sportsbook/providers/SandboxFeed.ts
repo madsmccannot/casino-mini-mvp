@@ -24,6 +24,30 @@ export class SandboxFeed {
           ]
         }]
       });
+      const created = this.events.get(eventId)!;
+      if (index === 0) {
+        created.status = 'LIVE';
+        created.startsAt = new Date(now.getTime() - 15 * 60_000);
+        created.markets[0].isLive = true;
+      }
+      const totalsProviderId = `${providerEventId}-totals`;
+      created.markets.push({
+        marketId: sportsId('market', 'sandbox', totalsProviderId), providerMarketId: totalsProviderId, eventId,
+        type: 'TOTALS', name: 'Total points', line: '2.5', status: 'ACTIVE', version: 1, isLive: index === 0, updatedAt,
+        selections: [
+          { selectionId: sportsId('selection', 'sandbox', `${totalsProviderId}-over`), providerSelectionId: `${totalsProviderId}-over`, name: 'Over 2.5', oddsMillionths: 1_850_000n, originalOddsMillionths: 1_750_000n, boostId: `boost-${sport}-over`, boostLabel: 'BOOST', status: 'ACTIVE' },
+          { selectionId: sportsId('selection', 'sandbox', `${totalsProviderId}-under`), providerSelectionId: `${totalsProviderId}-under`, name: 'Under 2.5', oddsMillionths: 1_950_000n, status: 'ACTIVE' }
+        ]
+      });
+      const propProviderId = `${providerEventId}-player-prop`;
+      created.markets.push({
+        marketId: sportsId('market', 'sandbox', propProviderId), providerMarketId: propProviderId, eventId,
+        type: 'PLAYER_PROP', name: 'Player performance', line: '1.5', status: 'ACTIVE', version: 1, isLive: index === 0, updatedAt,
+        selections: [
+          { selectionId: sportsId('selection', 'sandbox', `${propProviderId}-over`), providerSelectionId: `${propProviderId}-over`, name: 'Over 1.5', participant: `Player ${index + 1}`, oddsMillionths: 2_100_000n, status: 'ACTIVE' },
+          { selectionId: sportsId('selection', 'sandbox', `${propProviderId}-under`), providerSelectionId: `${propProviderId}-under`, name: 'Under 1.5', participant: `Player ${index + 1}`, oddsMillionths: 1_700_000n, status: 'ACTIVE' }
+        ]
+      });
     });
   }
   async snapshot() { return structuredClone([...this.events.values()]); }

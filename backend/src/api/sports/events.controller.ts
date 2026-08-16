@@ -6,7 +6,7 @@ import { SportsMarket } from '../../sportsbook/models/SportsMarket';
 const marketJson = (market: any) => ({
   marketId: market.marketId, eventId: market.eventId, type: market.type, name: market.name, line: market.line,
   isLive: market.isLive, status: market.status, version: market.version, updatedAt: market.providerUpdatedAt,
-  selections: market.selections.map((selection: any) => ({ selectionId: selection.selectionId, name: selection.name, oddsMillionths: selection.oddsMillionths.toString(), status: selection.status }))
+  selections: market.selections.map((selection: any) => ({ selectionId: selection.selectionId, name: selection.name, oddsMillionths: selection.oddsMillionths.toString(), status: selection.status, participant: selection.participant, boostId: selection.boostId, boostLabel: selection.boostLabel, originalOddsMillionths: selection.originalOddsMillionths?.toString() }))
 });
 
 export const listSportsEvents = async (req: Request, res: Response) => {

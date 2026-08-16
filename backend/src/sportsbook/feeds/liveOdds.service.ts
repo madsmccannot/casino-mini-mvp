@@ -4,6 +4,7 @@ import { SportsMarket } from '../models/SportsMarket';
 import { ingestSportsFeed, markStaleMarkets } from './eventFeed.service';
 import { pollSportsSettlements } from '../tickets/settlement.service';
 import { recoverReservedSportsTickets } from '../tickets/ticket.service';
+import { recoverPendingSportsCashouts } from '../tickets/cashout.service';
 
 export const attachSportsOddsStream = (server: Server) => {
   const sockets = new WebSocketServer({ server, path: '/api/sports/stream', maxPayload: 1024, perMessageDeflate: false });
@@ -15,11 +16,11 @@ export const attachSportsOddsStream = (server: Server) => {
       if (Date.now() - lastIngest >= 1_000) {
         await ingestSportsFeed(); await markStaleMarkets(); lastIngest = Date.now();
       }
-      if (Date.now() - lastSettlement >= 2_000) { await recoverReservedSportsTickets(); await pollSportsSettlements(); lastSettlement = Date.now(); }
+      if (Date.now() - lastSettlement >= 2_000) { await recoverReservedSportsTickets(); await recoverPendingSportsCashouts(); await pollSportsSettlements(); lastSettlement = Date.now(); }
       const changed = await SportsMarket.find({ updatedAt: { $gt: cursor } }).sort({ updatedAt: 1 }).limit(1000).lean();
       if (changed.length) {
         cursor = changed[changed.length - 1].updatedAt;
-        const payload = JSON.stringify({ type: 'odds', markets: changed.map(market => ({ marketId: market.marketId, eventId: market.eventId, status: market.status, version: market.version, updatedAt: market.providerUpdatedAt, selections: market.selections.map(selection => ({ selectionId: selection.selectionId, name: selection.name, oddsMillionths: selection.oddsMillionths.toString(), status: selection.status })) })) });
+        const payload = JSON.stringify({ type: 'odds', markets: changed.map(market => ({ marketId: market.marketId, eventId: market.eventId, status: market.status, version: market.version, updatedAt: market.providerUpdatedAt, selections: market.selections.map(selection => ({ selectionId: selection.selectionId, name: selection.name, oddsMillionths: selection.oddsMillionths.toString(), status: selection.status, participant: selection.participant, boostId: selection.boostId, boostLabel: selection.boostLabel, originalOddsMillionths: selection.originalOddsMillionths?.toString() })) })) });
         for (const client of sockets.clients) if (client.readyState === WebSocket.OPEN) client.send(payload);
       }
     } catch { /* disabled/unconfigured providers remain quietly fail-closed */ }

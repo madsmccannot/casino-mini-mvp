@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'; import test, { after, before, beforeEac
 import { User } from '../models/User'; import { migrateLegacyTestBalances } from '../ledger/migrateLegacyBalances.service'; import { getUnifiedBalance } from '../ledger/balance.service';
 import { ingestSportsFeed, markStaleMarkets } from './feeds/eventFeed.service'; import { sandboxFeed } from './providers/SandboxFeed'; import { SportsMarket } from './models/SportsMarket'; import { placeSportsTicket } from './tickets/ticket.service'; import { SandboxSportsbookProvider } from './providers/SandboxSportsbookProvider'; import { applySportsSettlement, pollSportsSettlements } from './tickets/settlement.service'; import { SportsTicket } from './models/SportsTicket';
 import { app } from '../server'; import jwt from 'jsonwebtoken'; import { getJwtSecret } from '../config/env'; import { AddressInfo } from 'node:net'; import WebSocket from 'ws'; import { attachSportsOddsStream } from './feeds/liveOdds.service';
+import { acceptSportsCashout, quoteSportsCashout } from './tickets/cashout.service';
+import { SportsCashoutQuote } from './models/SportsCashoutQuote';
 
 const uri = process.env.LEDGER_TEST_MONGO_URI; if (!uri) throw new Error('LEDGER_TEST_MONGO_URI is required'); let user: any;
 before(async () => { process.env.NODE_ENV = 'test'; process.env.SPORTSBOOK_PROVIDER = 'sandbox'; process.env.SPORTSBOOK_SANDBOX_MODE = 'enabled'; await mongoose.connect(uri.replace('/casino_ledger_test?', '/casino_sportsbook_test?')); await mongoose.connection.dropDatabase(); user = await User.create({ walletAddress: 'sportsbook-test-user', balance: 10 }); const migration = await migrateLegacyTestBalances(); assert.equal(migration.errors.length, 0); });
@@ -29,7 +31,7 @@ test('single ticket acceptance and WIN settlement are idempotent in the ledger',
 });
 
 test('accumulator supports partial updates and VOID legs without early payout', async () => {
-  const markets: any[] = await SportsMarket.find({ status: 'ACTIVE' }).limit(2); assert.notEqual(markets[0].eventId, markets[1].eventId);
+  const first: any = await SportsMarket.findOne({ status: 'ACTIVE' }); const second: any = await SportsMarket.findOne({ status: 'ACTIVE', eventId: { $ne: first.eventId } }); const markets = [first, second]; assert.notEqual(markets[0].eventId, markets[1].eventId);
   const legs = [quote(markets[0]), quote(markets[1])];
   const ticket: any = await placeSportsTicket({ ticketId: 'sports:acca:void:001', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, legs });
   await SandboxSportsbookProvider.publishSettlement(ticket.providerTicketId, [{ selectionId: legs[0].selectionId, result: 'WIN' }]); await pollSportsSettlements();
@@ -39,9 +41,40 @@ test('accumulator supports partial updates and VOID legs without early payout', 
 });
 
 test('stale markets are suspended from acceptance', async () => {
-  const market: any = await SportsMarket.findOne({ status: 'ACTIVE' }); const leg = quote(market);
-  await markStaleMarkets(new Date(Date.now() + 3 * 60_000));
+  const market: any = await SportsMarket.findOne({ status: 'ACTIVE', isLive: false }); const leg = quote(market);
+  await SportsMarket.updateOne({ _id: market._id }, { $set: { providerUpdatedAt: new Date(0) } }); await markStaleMarkets();
   await assert.rejects(() => placeSportsTicket({ ticketId: 'sports:stale:reject1', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, legs: [leg] }), /unavailable, suspended, or stale/);
+  sandboxFeed.updateOdds(leg.selectionId, BigInt(leg.displayedOddsMillionths)); await ingestSportsFeed();
+});
+
+test('live tickets are accepted with provider-authoritative live context', async () => {
+  const market: any = await SportsMarket.findOne({ isLive: true, status: 'ACTIVE' }); assert.ok(market);
+  const ticket: any = await placeSportsTicket({ ticketId: 'sports:live:ticket:001', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, legs: [quote(market)] });
+  assert.equal(ticket.status, 'ACCEPTED'); assert.equal(ticket.context, 'LIVE');
+});
+
+test('Bet Builder accepts same-event correlations only as an explicit provider product', async () => {
+  const event: any = await SportsMarket.findOne({ status: 'ACTIVE' });
+  const markets: any[] = await SportsMarket.find({ eventId: event.eventId, status: 'ACTIVE' }).limit(2); assert.equal(markets.length, 2);
+  const legs = markets.map(market => quote(market));
+  await assert.rejects(() => placeSportsTicket({ ticketId: 'sports:builder:standard:01', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, product: 'STANDARD', legs }), /require Bet Builder/);
+  const ticket: any = await placeSportsTicket({ ticketId: 'sports:builder:accepted:01', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, product: 'BET_BUILDER', legs });
+  assert.equal(ticket.status, 'ACCEPTED'); assert.equal(ticket.type, 'BET_BUILDER'); assert.ok(BigInt(ticket.maxPayoutMinor.toString()) > 0n);
+  await SandboxSportsbookProvider.publishSettlement(ticket.providerTicketId, legs.map(leg => ({ selectionId: leg.selectionId, result: 'WIN' as const }))); await pollSportsSettlements();
+  const settled: any = await SportsTicket.findOne({ ticketId: ticket.ticketId }); assert.equal(settled.status, 'SETTLED'); assert.equal(settled.payoutMinor.toString(), ticket.maxPayoutMinor.toString());
+});
+
+test('cashout uses an expiring provider quote and settles the reservation exactly once', async () => {
+  const market: any = await SportsMarket.findOne({ status: 'ACTIVE' }); const before = (await getUnifiedBalance(user._id.toString())).availableMinor;
+  const ticket: any = await placeSportsTicket({ ticketId: 'sports:cashout:accepted:01', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, legs: [quote(market)] });
+  const offered = await quoteSportsCashout(user._id, ticket.ticketId); assert.equal(offered.amountMinor, '8500000');
+  const cashed: any = await acceptSportsCashout(user._id, ticket.ticketId, offered.quoteId); assert.equal(cashed.status, 'CASHED_OUT');
+  await acceptSportsCashout(user._id, ticket.ticketId, offered.quoteId);
+  assert.equal((await getUnifiedBalance(user._id.toString())).availableMinor, before - 1_500_000n);
+  const another: any = await placeSportsTicket({ ticketId: 'sports:cashout:expired:01', ownerId: user._id, stakeSol: 0.01, acceptOddsChange: false, legs: [quote(market)] });
+  const expired = await quoteSportsCashout(user._id, another.ticketId); await SportsCashoutQuote.collection.updateOne({ quoteId: expired.quoteId }, { $set: { expiresAt: new Date(0) } });
+  await assert.rejects(() => acceptSportsCashout(user._id, another.ticketId, expired.quoteId), /expired/);
+  assert.equal((await SportsTicket.findOne({ ticketId: another.ticketId }))?.status, 'ACCEPTED');
 });
 
 test('Sports HTTP API and WebSocket stream expose versioned provider odds end to end', async () => {

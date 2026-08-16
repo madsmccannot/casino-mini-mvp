@@ -7,5 +7,7 @@ export class SportradarProvider implements SportsbookProvider {
   async fetchEvents(): Promise<any> { return this.unavailable(); }
   async acceptTicket(): Promise<any> { return this.unavailable(); }
   async cancelTicket(): Promise<void> { return this.unavailable(); }
+  async quoteCashout(): Promise<any> { return this.unavailable(); }
+  async acceptCashout(): Promise<any> { return this.unavailable(); }
   async getSettlementUpdates(): Promise<any> { return this.unavailable(); }
 }
