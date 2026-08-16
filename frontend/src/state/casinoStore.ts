@@ -3,7 +3,7 @@ import { create } from 'zustand';
 // Interface for Game Result
 export interface GameResult {
   id: string;
-  game: 'coinflip' | 'dice' | 'roulette' | 'mines' | 'plinko';
+  game: 'coinflip' | 'dice' | 'roulette' | 'mines' | 'plinko' | 'crash' | 'limbo' | 'blackjack';
   wager: number;
   payout: number;
   win: boolean;

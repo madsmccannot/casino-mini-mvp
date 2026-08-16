@@ -62,6 +62,12 @@ const Home: NextPage = () => {
     },
   ], [language, t]);
 
+  const gamesRow3 = useMemo(() => [
+    { id: 'crash', name: 'CRASH', icon: '🚀', desc: 'Ride the multiplier', color: 'purple', gradient: 'from-purple-900/40 to-black', hoverGradient: 'group-hover:from-purple-600 group-hover:to-purple-900', borderGlow: 'group-hover:shadow-purple-500/50' },
+    { id: 'limbo', name: 'LIMBO', icon: '♾️', desc: 'Set your target', color: 'cyan', gradient: 'from-cyan-900/40 to-black', hoverGradient: 'group-hover:from-cyan-600 group-hover:to-cyan-900', borderGlow: 'group-hover:shadow-cyan-500/50' },
+    { id: 'blackjack', name: 'BLACKJACK', icon: '🂡', desc: 'Beat the dealer', color: 'emerald', gradient: 'from-emerald-900/40 to-black', hoverGradient: 'group-hover:from-emerald-600 group-hover:to-emerald-900', borderGlow: 'group-hover:shadow-emerald-500/50' }
+  ], []);
+
   const HexagonCard = ({ game }: { game: any }) => (
     <Link href={`/${game.id}`} className="group relative block mx-1 z-0 hover:z-20 transition-all duration-300">
       <div 
@@ -121,6 +127,9 @@ const Home: NextPage = () => {
         </div>
         <div className="flex justify-center items-center -mt-[50px] md:-mt-[55px]">
           {gamesRow2.map(game => <HexagonCard key={game.id} game={game} />)}
+        </div>
+        <div className="flex justify-center items-center -mt-[50px] md:-mt-[55px]">
+          {gamesRow3.map(game => <HexagonCard key={game.id} game={game} />)}
         </div>
       </div>
     </div>
