@@ -9,6 +9,8 @@ import { minesService } from '../../games/mines.service';
 import { riskEngine } from '../../bankroll/riskEngine';
 import { getUserBalanceSol, refundCasinoBet, reserveCasinoBet, settleCasinoBet } from '../../ledger/casinoLedger.service';
 import { GameSession } from '../../models/GameSession';
+import { authorizeBetBankroll, releaseBetBankroll, settleBetBankroll } from '../../bankroll/betBankroll.service';
+import { getGameLimits } from '../../bankroll/limits';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9:_-]{16,128}$/;
 
@@ -61,6 +63,23 @@ const finishBet = async (betId: string) => Bet.findOneAndUpdate(
   { returnDocument: 'after' }
 );
 
+const reserveBet = async (userId: any, betId: string, game: string, wager: number, maxMultiplier: number) => {
+  await authorizeBetBankroll(betId, game, wager, maxMultiplier);
+  try {
+    await reserveCasinoBet(userId, betId, wager);
+    return await createPendingBet(userId, betId, game, wager);
+  } catch (error) {
+    await releaseBetBankroll(betId).catch(() => undefined);
+    throw error;
+  }
+};
+
+const settleBet = async (betId: string, payout: number, result: any) => {
+  await settleBetBankroll(betId, payout, result);
+  await settleCasinoBet(betId, payout);
+  await finishBet(betId);
+};
+
 export const placeBet = async (req: AuthRequest, res: Response) => {
   const { game, betAmount, params, action = 'bet', idempotencyKey } = req.body;
   const userId = req.user?._id;
@@ -75,8 +94,7 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
       return res.status(200).json(await completedResponse(userId.toString(), existing.game, existing.details));
     }
     if (existing?.status === 'RESULT_READY') {
-      await settleCasinoBet(existing.betId, existing.payout);
-      await finishBet(existing.betId);
+      await settleBet(existing.betId, existing.payout, existing.details);
       return res.status(200).json(await completedResponse(userId.toString(), existing.game, existing.details));
     }
     if (existing && existing.game !== game) {
@@ -88,8 +106,7 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
       const riskValidation = await riskEngine.validateBet(game, betAmount, potentialMultiplier);
       if (riskValidation !== true) return res.status(400).json({ success: false, error: riskValidation });
 
-      await reserveCasinoBet(userId, idempotencyKey, betAmount);
-      await createPendingBet(userId, idempotencyKey, game, betAmount);
+      await reserveBet(userId, idempotencyKey, game, betAmount, potentialMultiplier);
       let result: any;
       try {
         switch (game) {
@@ -100,13 +117,13 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
           default: throw new Error('Game not supported');
         }
         await markResultReady(idempotencyKey, result);
-        await settleCasinoBet(idempotencyKey, result.payout);
-        await finishBet(idempotencyKey);
+        await settleBet(idempotencyKey, result.payout, result);
         return res.status(200).json(await completedResponse(userId.toString(), game, result));
       } catch (error) {
         const pending = await Bet.findOne({ betId: idempotencyKey, status: 'FUNDS_RESERVED' });
         if (pending) {
           await refundCasinoBet(idempotencyKey).catch(() => undefined);
+          await releaseBetBankroll(idempotencyKey).catch(() => undefined);
           await Bet.updateOne({ _id: pending._id, status: 'FUNDS_RESERVED' }, { $set: { status: 'REFUNDED' } });
         }
         throw error;
@@ -134,13 +151,16 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
           return res.status(200).json(await completedResponse(userId.toString(), game, result));
         }
       }
-      await reserveCasinoBet(userId, idempotencyKey, betAmount);
-      await createPendingBet(userId, idempotencyKey, game, betAmount);
+      const maxMultiplier = getGameLimits('mines').maxPayoutMultiplier;
+      const riskValidation = await riskEngine.validateBet('mines', betAmount, maxMultiplier);
+      if (riskValidation !== true) return res.status(400).json({ success: false, error: riskValidation });
+      await reserveBet(userId, idempotencyKey, game, betAmount, maxMultiplier);
       try {
         const result = await minesService.startGame(userId.toString(), idempotencyKey, betAmount, params);
         return res.status(200).json(await completedResponse(userId.toString(), game, result));
       } catch (error) {
         await refundCasinoBet(idempotencyKey).catch(() => undefined);
+        await releaseBetBankroll(idempotencyKey).catch(() => undefined);
         await Bet.updateOne({ betId: idempotencyKey }, { $set: { status: 'REFUNDED' } });
         throw error;
       }
@@ -150,8 +170,7 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
       const result = await minesService.reveal(userId.toString(), params);
       if (result.outcome?.status === 'boom') {
         await markResultReady(result.betId, result);
-        await settleCasinoBet(result.betId, 0);
-        await finishBet(result.betId);
+        await settleBet(result.betId, 0, result);
       }
       return res.status(200).json(await completedResponse(userId.toString(), game, result));
     }
@@ -159,8 +178,7 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
     if (action === 'cashout') {
       const result = await minesService.cashout(userId.toString(), params);
       await markResultReady(result.betId, result);
-      await settleCasinoBet(result.betId, result.payout);
-      await finishBet(result.betId);
+      await settleBet(result.betId, result.payout, result);
       return res.status(200).json(await completedResponse(userId.toString(), game, result));
     }
 

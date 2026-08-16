@@ -1,26 +1,25 @@
-import { bankrollService } from './bankroll.service';
 import { getGameLimits, MAX_MULTIPLIER_GLOBAL } from './limits';
-import { BankrollStatus } from '../types';
+import { bankrollRouter } from './BankrollRouter';
+import { solToLamports, lamportsToSol } from '../ledger/casinoLedger.service';
 
 // Regra de Ouro: Nunca arriscar mais de 1% da banca numa única aposta.
 // Se a banca tiver 100 SOL, o pagamento máximo possível é 1 SOL.
-const MAX_BANKROLL_EXPOSURE_PERCENT = 1.0; 
-
 export const riskEngine = {
 
     /**
      * Calcula o estado de risco atual
      */
-    getStatus: async (): Promise<BankrollStatus> => {
-        const totalBalance = await bankrollService.getHouseBalance();
-        
-        const maxExposure = totalBalance * (MAX_BANKROLL_EXPOSURE_PERCENT / 100);
-
-        return {
-            totalBalance,
-            maxRiskExposure: maxExposure,
-            maxPayoutMultiplier: MAX_MULTIPLIER_GLOBAL,
-        };
+    getStatus: async (game = 'dice') => {
+        return bankrollRouter.execute(async provider => {
+            const limits = await provider.getLimits(game, 'SOL');
+            return {
+                provider: provider.name,
+                totalBalance: lamportsToSol(limits.availableLiquidityMinor),
+                maxRiskExposure: lamportsToSol(limits.maxPayoutMinor),
+                maxPayoutMultiplier: Number(limits.maxMultiplierBps) / 10_000,
+                validUntil: limits.validUntil
+            };
+        });
     },
 
     /**
@@ -33,7 +32,8 @@ export const riskEngine = {
         const gameLimits = getGameLimits(game);
 
         // 2. Estado da Banca (Dinâmico)
-        const { maxRiskExposure } = await riskEngine.getStatus();
+        const providerLimits = await bankrollRouter.execute(provider => provider.getLimits(game, 'SOL'));
+        const maxRiskExposure = lamportsToSol(providerLimits.maxPayoutMinor);
         
         const calculatedMaxPayout = wager * potentialMultiplier;
 
@@ -42,10 +42,16 @@ export const riskEngine = {
             return `Multiplier ${potentialMultiplier.toFixed(2)}x exceeds limit for ${game}`;
         }
 
+        if (BigInt(Math.ceil(potentialMultiplier * 10_000)) > providerLimits.maxMultiplierBps) {
+            return `Multiplier ${potentialMultiplier.toFixed(2)}x exceeds provider limit`;
+        }
+
         // CHECK B: Aposta acima do teto fixo?
         if (wager > gameLimits.maxBetAmountSOL) {
             return `Wager exceeds max allowed for ${game} (${gameLimits.maxBetAmountSOL} SOL)`;
         }
+
+        if (solToLamports(wager) > providerLimits.maxBetMinor) return 'Wager exceeds provider maximum stake';
 
         // CHECK C: Risco de Ruína (O mais importante)
         // O casino tem dinheiro para pagar se o jogador ganhar?

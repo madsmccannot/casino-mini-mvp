@@ -1,12 +1,10 @@
 import { Response } from 'express';
 import { AuthRequest } from '../bets/validateBet.middleware';
 import { bankrollService } from '../../bankroll/bankroll.service';
-import { solanaWallet } from '../../wallet/solanaWallet';
 import { shutdownService } from '../../emergency/shutdown.service'; 
 import { logger } from '../../utils/logger';
-import { PublicKey } from '@solana/web3.js';
-import crypto from 'crypto';
-import { appendAuditEvent } from '../../observability/auditLog';
+import { bankrollRouter } from '../../bankroll/BankrollRouter';
+import { getAggregatedExposure } from '../../bankroll/exposure/exposure.service';
 
 /**
  * ROTA ADMIN: Obtém o estado atual da Banca e do Sistema
@@ -18,8 +16,10 @@ export const getBankrollStatus = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        // 1. Obter saldo real da blockchain
+        const provider = bankrollRouter.selected();
+        const health = await provider.getHealth();
         const balanceSol = await bankrollService.getHouseBalance();
+        const exposure = await getAggregatedExposure();
         
         // 2. Obter estado de emergência
         // Se isSystemActive for FALSE, significa que a Emergência é TRUE (está parado)
@@ -27,9 +27,11 @@ export const getBankrollStatus = async (req: AuthRequest, res: Response) => {
         const isEmergency = !isSystemActive; 
 
         return res.json({
-            address: solanaWallet.getAddress(),
+            provider: provider.name,
+            providerHealth: health,
             balanceSol: balanceSol,
-            status: balanceSol > 1 ? 'HEALTHY' : 'LOW_FUNDS',
+            exposure,
+            status: health.state,
             isEmergency: isEmergency // O frontend usa isto para bloquear botões
         });
 
@@ -48,50 +50,9 @@ export const withdrawHouseFunds = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ error: "Access Denied" });
     }
 
-    if (!solanaWallet.isEnabled()) {
-        return res.status(503).json({ error: 'Custody is not configured. House withdrawals are disabled.' });
-    }
-
-    const { amount, targetAddress } = req.body;
-
-    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(amount * 1_000_000_000) || !targetAddress) {
-        return res.status(400).json({ error: "Invalid amount or address" });
-    }
-
-    try {
-        if (new PublicKey(targetAddress).toBase58() !== targetAddress) throw new Error('non-canonical address');
-    } catch {
-        return res.status(400).json({ error: "Invalid amount or address" });
-    }
-
-    try {
-        logger.warn(`ADMIN ${req.user.walletAddress} requesting house withdrawal of ${amount} SOL to ${targetAddress}`);
-
-        // Usamos o bankrollService para processar a saída
-        const txSignature = await bankrollService.payoutUser(targetAddress, amount); 
-        await appendAuditEvent({
-            eventId: crypto.randomUUID(),
-            actorId: req.user._id,
-            actorWallet: req.user.walletAddress,
-            action: 'HOUSE_WITHDRAWAL_SUBMITTED',
-            targetType: 'solana_transaction',
-            targetId: txSignature,
-            correlationId: req.correlationId || crypto.randomUUID(),
-            outcome: 'SUCCESS',
-            metadata: { amountMinor: Math.round(amount * 1_000_000_000).toString(), targetAddress }
-        });
-
-        return res.json({
-            success: true,
-            message: "House withdrawal successful",
-            tx: txSignature,
-            amount: amount
-        });
-
-    } catch (error: any) {
-        logger.error("House withdrawal failed", error);
-        return res.status(500).json({ error: error.message || "Withdrawal failed" });
-    }
+    return res.status(503).json({
+        error: 'Direct house-wallet withdrawals are retired. Liquidity operations must use an approved provider-native workflow.'
+    });
 };
 
 /**
@@ -102,8 +63,7 @@ export const getDepositAddress = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ error: "Access Denied" });
     }
     
-    return res.json({ 
-        address: solanaWallet.getAddress(),
-        message: "Send SOL to this address to top-up the house bankroll."
+    return res.status(503).json({
+        error: 'Legacy house-wallet funding is retired. Use an approved provider-native liquidity workflow.'
     });
 };

@@ -32,12 +32,10 @@ export const getAllowedOrigins = (): string[] => {
   return ['http://localhost:3000'];
 };
 
-export const getCustodyMode = (): 'disabled' | 'hot_wallet' => {
+export const getCustodyMode = (): 'disabled' => {
   const mode = process.env.CUSTODY_MODE?.trim() || 'disabled';
-  if (mode !== 'disabled' && mode !== 'hot_wallet') {
-    throw new Error('CUSTODY_MODE must be either disabled or hot_wallet');
-  }
-  return mode;
+  if (mode !== 'disabled') throw new Error('Only CUSTODY_MODE=disabled is supported; legacy wallet custody is retired');
+  return 'disabled';
 };
 
 export const assertProductionConfig = (): void => {
@@ -47,5 +45,12 @@ export const assertProductionConfig = (): void => {
     required('MONGO_URI');
     required('SOLANA_RPC_URL');
   }
-  if (getCustodyMode() === 'hot_wallet') required('CASINO_PRIVATE_KEY');
+  getCustodyMode();
+  const bankrollProvider = process.env.BANKROLL_PROVIDER?.trim() || 'disabled';
+  if (!['disabled', 'internal', 'winr'].includes(bankrollProvider)) {
+    throw new Error('BANKROLL_PROVIDER must be disabled, internal, or winr');
+  }
+  if (isProduction && bankrollProvider === 'internal') {
+    throw new Error('BANKROLL_PROVIDER=internal is forbidden in production');
+  }
 };
