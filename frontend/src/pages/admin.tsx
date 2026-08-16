@@ -1,13 +1,13 @@
 import type { NextPage } from 'next';
 import { useState, useEffect } from 'react';
-import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../hooks/useEvmWallet';
 import { api } from '../services/api';
 import { useCasinoStore } from '../state/casinoStore'; // Importar Store
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/router';
 
 const AdminPage: NextPage = () => {
-  const { connected, publicKey } = useInjectedSolanaWallet();
+  const { connected, address } = useEvmWallet();
   const { isAuthenticated } = useCasinoStore(); // Verificar se está LOGADO mesmo
   const router = useRouter();
   
@@ -172,7 +172,7 @@ const AdminPage: NextPage = () => {
                     value={withdrawAddress}
                     onChange={(e) => setWithdrawAddress(e.target.value)}
                     className="w-full bg-[#0c0f17] border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 font-mono text-sm"
-                    placeholder={publicKey?.toString()}
+                    placeholder={address ?? undefined}
                 />
             </div>
 

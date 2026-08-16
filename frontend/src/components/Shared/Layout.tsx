@@ -5,7 +5,7 @@ import { useUIStore } from '../../state/uiStore';
 import { useCasinoStore } from '../../state/casinoStore';
 
 // Solana wallet adapter
-import { useInjectedSolanaWallet } from '../../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../../hooks/useEvmWallet';
 
 // Novo Hook de Autenticação (A ponte entre Wallet e Backend)
 import { useWalletAuth } from '../../hooks/useWalletAuth';
@@ -18,7 +18,8 @@ import { WithdrawModal } from './WithdrawModal';
 import { Sidebar } from './Sidebar';
 
 // WALLETS
-import { SolanaWallet } from '../WalletConnect/SolanaWallet';
+import { EvmWallet } from '../WalletConnect/EvmWallet';
+import { supportedEvmChains } from '../../lib/evmConfig';
 
 const LANGUAGES = [
   { code: 'en', countryCode: 'us', label: 'EN' },
@@ -37,7 +38,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { balance } = useCasinoStore();
 
   // Wallets (Solana)
-  const { publicKey, connected } = useInjectedSolanaWallet();
+  const { address, connected, chainId } = useEvmWallet();
   
   // Auth Logic (Backend)
   // Usamos o hook para gerir o login automaticamente sem duplicar lógica
@@ -57,12 +58,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Se a carteira conectar e ainda não tivermos autenticado no backend -> Login
   // Se a carteira desconectar -> Logout
   useEffect(() => {
-    if (connected && publicKey && !isAuthenticated) {
+    const supportedNetwork = supportedEvmChains.some((chain) => chain.id === chainId);
+    if (connected && address && supportedNetwork && !isAuthenticated) {
       login();
     } else if (!connected && isAuthenticated) {
       disconnectBackend();
     }
-  }, [connected, publicKey, isAuthenticated, login, disconnectBackend]);
+  }, [connected, address, chainId, isAuthenticated, login, disconnectBackend]);
+
+  useEffect(() => {
+    const openDeposit = () => setIsDepositOpen(true);
+    window.addEventListener('casino:open-deposit', openDeposit);
+    return () => window.removeEventListener('casino:open-deposit', openDeposit);
+  }, []);
 
   const currentLangObj = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
 
@@ -87,7 +95,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5 group-hover:text-blue-400 transition-colors">{t('bankroll_label')}</span>
                 <div className="flex items-center gap-3 bg-[#0c0f17]/50 px-3 py-1.5 rounded-lg border border-white/5 hover:border-white/10 transition-all">
                    <span className="font-mono text-emerald-400 font-bold text-lg drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
-                       {balance.toFixed(4)} SOL
+                       ${balance.toFixed(2)}
                    </span>
                    <div className="h-4 w-px bg-white/10 mx-1"></div>
                    <div className="flex gap-1">
@@ -120,7 +128,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {mounted && (
                 <div className="flex gap-2">
                     <div className="shadow-lg shadow-blue-600/10 rounded-lg border border-blue-500/20 z-50 relative">
-                        <SolanaWallet />
+                        <EvmWallet />
                     </div>
                 </div>
             )}

@@ -1,6 +1,6 @@
 import { getGameLimits, MAX_MULTIPLIER_GLOBAL } from './limits';
 import { bankrollRouter } from './BankrollRouter';
-import { solToLamports, lamportsToSol } from '../ledger/casinoLedger.service';
+import { usdcToMinor, minorToUsdc } from '../ledger/casinoLedger.service';
 
 // Regra de Ouro: Nunca arriscar mais de 1% da banca numa única aposta.
 // Se a banca tiver 100 SOL, o pagamento máximo possível é 1 SOL.
@@ -11,11 +11,11 @@ export const riskEngine = {
      */
     getStatus: async (game = 'dice') => {
         return bankrollRouter.execute(async provider => {
-            const limits = await provider.getLimits(game, 'SOL');
+            const limits = await provider.getLimits(game, 'USDC');
             return {
                 provider: provider.name,
-                totalBalance: lamportsToSol(limits.availableLiquidityMinor),
-                maxRiskExposure: lamportsToSol(limits.maxPayoutMinor),
+                totalBalance: minorToUsdc(limits.availableLiquidityMinor),
+                maxRiskExposure: minorToUsdc(limits.maxPayoutMinor),
                 maxPayoutMultiplier: Number(limits.maxMultiplierBps) / 10_000,
                 validUntil: limits.validUntil
             };
@@ -32,8 +32,8 @@ export const riskEngine = {
         const gameLimits = getGameLimits(game);
 
         // 2. Estado da Banca (Dinâmico)
-        const providerLimits = await bankrollRouter.execute(provider => provider.getLimits(game, 'SOL'));
-        const maxRiskExposure = lamportsToSol(providerLimits.maxPayoutMinor);
+        const providerLimits = await bankrollRouter.execute(provider => provider.getLimits(game, 'USDC'));
+        const maxRiskExposure = minorToUsdc(providerLimits.maxPayoutMinor);
         
         const calculatedMaxPayout = wager * potentialMultiplier;
 
@@ -51,7 +51,7 @@ export const riskEngine = {
             return `Wager exceeds max allowed for ${game} (${gameLimits.maxBetAmountSOL} SOL)`;
         }
 
-        if (solToLamports(wager) > providerLimits.maxBetMinor) return 'Wager exceeds provider maximum stake';
+        if (usdcToMinor(wager) > providerLimits.maxBetMinor) return 'Wager exceeds provider maximum stake';
 
         // CHECK C: Risco de Ruína (O mais importante)
         // O casino tem dinheiro para pagar se o jogador ganhar?

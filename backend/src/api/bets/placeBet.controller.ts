@@ -3,7 +3,7 @@ import { AuthRequest } from './validateBet.middleware';
 import { Bet } from '../../models/Bet';
 import { minesService } from '../../games/mines.service';
 import { riskEngine } from '../../bankroll/riskEngine';
-import { getUserBalanceSol, refundCasinoBet, reserveCasinoBet, settleCasinoBet } from '../../ledger/casinoLedger.service';
+import { getUserBalanceUsdc, refundCasinoBet, reserveCasinoBet, settleCasinoBet } from '../../ledger/casinoLedger.service';
 import { GameSession } from '../../models/GameSession';
 import { authorizeBetBankroll, releaseBetBankroll, settleBetBankroll } from '../../bankroll/betBankroll.service';
 import { maxMultiplierFor } from '../../games/gameRegistry';
@@ -17,7 +17,8 @@ const completedResponse = async (userId: string, game: string, result: any) => (
   success: true,
   game,
   result,
-  newBalance: await getUserBalanceSol(userId)
+  newBalance: await getUserBalanceUsdc(userId),
+  currency: 'USDC'
 });
 
 const createPendingBet = async (userId: any, betId: string, game: string, wager: number) => {

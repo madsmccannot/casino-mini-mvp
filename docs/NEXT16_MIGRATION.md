@@ -19,4 +19,4 @@ npm run build
 npm audit --omit=dev
 ```
 
-The Next.js/PostCSS/Sharp advisories reported by the previous dependency line are resolved. The legacy Solana wallet-adapter, web3 and React Native/mobile dependency tree was also removed. Browser wallet access is now restricted to explicitly selected injected providers and ownership-message signing; deposits and withdrawals remain unavailable while custody is disabled.
+The Next.js/PostCSS/Sharp advisories reported by the previous dependency line are resolved. The canonical browser wallet flow now uses RainbowKit/WalletConnect v2 with a fail-closed injected/Coinbase fallback and EIP-4361-compatible ownership-message signing. Deposits and withdrawals remain unavailable while custody is disabled.

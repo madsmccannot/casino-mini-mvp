@@ -34,7 +34,7 @@ export const api = {
       });
       committedParams = { ...params, clientSeed, nonce, fairnessCommitId: commitment.commitId, commitHash: commitment.commitHash };
     }
-    // O backend agora valida o user pelo Token, não precisamos de enviar walletAddress no body
+    // The backend binds the JWT to the internal Account ID; wallet addresses never come from bet payloads.
     return request<any>('play', {
       method: 'POST',
       body: JSON.stringify({ game, betAmount, params: committedParams, action, idempotencyKey: crypto.randomUUID() })

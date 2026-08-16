@@ -9,8 +9,8 @@ export const DepositModal = ({ isOpen, onClose }: Props) => {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="bg-[#1a1f2b] p-8 rounded-3xl border border-amber-500/20 w-full max-w-md shadow-2xl relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
-        <h2 className="text-2xl font-bold text-white mb-4 text-center">Deposits unavailable</h2>
-        <p className="text-sm text-gray-400 text-center">Production custody is disabled. No legacy casino address or undocumented wallet will be used.</p>
+        <h2 className="text-2xl font-bold text-white mb-4 text-center">USDC deposits are being prepared</h2>
+        <p className="text-sm text-gray-400 text-center">Your account and wallet are ready. Deposit routing, gas abstraction and provider reconciliation must pass production review before funds can be accepted.</p>
       </div>
     </div>
   );

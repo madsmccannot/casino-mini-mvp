@@ -1,14 +1,14 @@
 import type { NextPage } from 'next';
 import { useCasinoStore } from '../state/casinoStore';
 import { useUIStore } from '../state/uiStore';
-import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../hooks/useEvmWallet';
 import { api } from '../services/api';
 import { toast } from 'react-hot-toast';
 import RouletteUI from '../components/GameUI/RouletteUI';
 
 const RoulettePage: NextPage = () => {
   const { balance, setBalance } = useCasinoStore();
-  const { connected } = useInjectedSolanaWallet();
+  const { connected } = useEvmWallet();
   const { t } = useUIStore();
 
   const handlePlay = async (amount: number, betType: string) => {

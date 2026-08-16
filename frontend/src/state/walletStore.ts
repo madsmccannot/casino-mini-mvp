@@ -4,11 +4,12 @@ import { useCasinoStore } from './casinoStore';
 
 interface WalletState {
   address: string | null;
+  chainId: number | null;
   token: string | null;
   isConnected: boolean; // Indica se está logado no BACKEND
 
   // Ações
-  setWalletSession: (address: string, token: string) => void;
+  setWalletSession: (address: string, token: string, chainId: number) => void;
   disconnect: () => void;
   
   // Helpers
@@ -19,21 +20,23 @@ export const useWalletStore = create<WalletState>()(
   persist(
     (set, get) => ({
       address: null,
+      chainId: null,
       token: null,
       isConnected: false,
 
       // 1. Define a sessão (Chamado pelo useWalletAuth após login com sucesso)
-      setWalletSession: (address, token) => {
+      setWalletSession: (address, token, chainId) => {
         set({ 
-            address, 
-            token, 
-            isConnected: true 
+            address,
+            chainId,
+            token,
+            isConnected: true,
         });
       },
 
       // 2. Logout / Limpeza Completa
       disconnect: () => {
-        set({ address: null, token: null, isConnected: false });
+        set({ address: null, chainId: null, token: null, isConnected: false });
         
         // Limpa também o estado do Casino (Saldo e Auth Flag)
         useCasinoStore.getState().setBalance(0);
@@ -56,6 +59,7 @@ export const useWalletStore = create<WalletState>()(
       // Apenas persistimos o que é essencial
       partialize: (state) => ({ 
         address: state.address, 
+        chainId: state.chainId,
         token: state.token, 
         isConnected: state.isConnected 
       }),

@@ -2,16 +2,21 @@ import type { NextPage } from 'next';
 import Link from 'next/link';
 import { useUIStore } from '../state/uiStore';
 import { useMemo } from 'react';
+import { useCasinoStore } from '../state/casinoStore';
+import { useEvmWallet } from '../hooks/useEvmWallet';
+import { EvmWallet } from '../components/WalletConnect/EvmWallet';
 
 const Home: NextPage = () => {
   const { t, language } = useUIStore(); 
+  const { balance, isAuthenticated } = useCasinoStore();
+  const { connected } = useEvmWallet();
 
   const gamesRow1 = useMemo(() => [
     { 
       id: 'coinflip', 
       name: t('game_coinflip') || "COINFLIP", 
       icon: '🪙', 
-      desc: t('desc_coinflip') || "Double your SOL",
+      desc: "Double your USDC",
       color: 'yellow',
       gradient: 'from-yellow-900/40 to-black',
       hoverGradient: 'group-hover:from-yellow-600 group-hover:to-yellow-900',
@@ -102,7 +107,7 @@ const Home: NextPage = () => {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[128px] pointer-events-none" />
 
-      <div className="text-center mb-10 animate-fade-in max-w-2xl mx-auto z-10">
+      <div className="text-center mb-8 animate-fade-in max-w-3xl mx-auto z-10">
         <div className="flex justify-center gap-3 mb-5"><Link href="/sports" className="px-5 py-2 rounded-full bg-blue-600/20 border border-blue-500/40 text-blue-300 text-sm font-bold">OPEN SPORTSBOOK →</Link><Link href="/casino" className="px-5 py-2 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/40 text-fuchsia-300 text-sm font-bold">OPEN CASINO →</Link></div>
         <h2 className="text-sm font-bold tracking-[0.3em] text-blue-400 mb-4 uppercase drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]">
           {t('hero_pre')}
@@ -117,9 +122,30 @@ const Home: NextPage = () => {
           </span>
         </h1>
 
-        <p className="text-gray-400 text-lg max-w-lg mx-auto leading-relaxed">
-          {t('hero_subtitle')}
-        </p>
+        <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">Play in dollars. Your wallet, network and settlement rails stay behind the scenes.</p>
+
+        <div className="mt-8 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-[#111827]/90 p-4 md:p-5 text-left shadow-2xl shadow-blue-950/30">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-blue-300 font-bold">Your account</p>
+              <p className="mt-1 text-2xl font-black text-white">${balance.toFixed(2)} <span className="text-sm font-bold text-gray-400">USDC</span></p>
+              <p className="text-xs text-gray-500 mt-1">{isAuthenticated ? 'Ready to play' : connected ? 'Confirm the wallet signature to continue' : 'Connect once, then deposit and play'}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <EvmWallet />
+              {isAuthenticated ? (
+                <button type="button" onClick={() => window.dispatchEvent(new Event('casino:open-deposit'))} className="px-4 py-2 rounded-lg text-sm font-bold border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25">Deposit</button>
+              ) : (
+                <button type="button" disabled className="px-4 py-2 rounded-lg text-sm font-bold border border-white/10 bg-white/5 text-gray-500 cursor-not-allowed">Deposit</button>
+              )}
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[10px] uppercase tracking-wider font-bold">
+            <div className="rounded-lg bg-white/5 px-2 py-2 text-blue-200">01 Connect</div>
+            <div className="rounded-lg bg-white/5 px-2 py-2 text-gray-400">02 Deposit</div>
+            <div className="rounded-lg bg-white/5 px-2 py-2 text-gray-400">03 Play</div>
+          </div>
+        </div>
       </div>
 
       <div className="relative flex flex-col items-center justify-center z-10 pb-20 scale-90 md:scale-100">

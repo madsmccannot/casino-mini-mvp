@@ -1,5 +1,4 @@
 import React from 'react';
-import { useCasinoStore } from '../../state/casinoStore';
 import { useUIStore } from '../../state/uiStore';
 
 interface GameControlsProps {
@@ -24,7 +23,6 @@ export function GameControls({
   setIsUsdMode
 }: GameControlsProps) {
   const { t } = useUIStore(); 
-  const { solPrice } = useCasinoStore();
 
   const borderColors: Record<string, string> = {
     emerald: "focus-within:border-emerald-500/50",
@@ -34,14 +32,7 @@ export function GameControls({
     blue: "focus-within:border-blue-500/50",
   };
 
-  const toggleMode = () => {
-    setIsUsdMode(!isUsdMode);
-  };
-
-  // Calcular valor da banca na moeda oposta para referência
-  const bankrollDisplay = isUsdMode 
-    ? `$${(balance * (solPrice || 0)).toFixed(2)}` 
-    : `${balance.toFixed(4)} SOL`;
+  const bankrollDisplay = `$${balance.toFixed(2)} USDC`;
 
   return (
     <div className="bg-[#1a2c38] p-6 rounded-3xl w-full max-w-md mx-auto shadow-xl border border-white/5 relative z-20">
@@ -53,12 +44,7 @@ export function GameControls({
              {t('lbl_bet_amount')}
           </span>
           
-          <button 
-            onClick={toggleMode}
-            className="bg-[#243b4a] hover:bg-[#2d4a5e] transition-colors px-3 py-1 rounded text-[10px] font-bold border border-white/5 text-gray-300 uppercase cursor-pointer select-none"
-          >
-             {isUsdMode ? t('lbl_usd_mode') : t('lbl_sol_mode')}
-          </button>
+          <span className="bg-[#243b4a] px-3 py-1 rounded text-[10px] font-bold border border-white/5 text-gray-300 uppercase">USDC ACCOUNT</span>
         </div>
 
         {/* INPUT CONTAINER */}
@@ -66,7 +52,7 @@ export function GameControls({
             
             {/* Ícone de Moeda */}
             <div className="mr-3 text-gray-500 font-bold select-none flex items-center justify-center w-6">
-                {isUsdMode ? '$' : <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="SOL" className="w-5 h-5 opacity-80" />}
+                $
             </div>
 
             <input
@@ -82,7 +68,7 @@ export function GameControls({
             {/* LABEL ESTÁTICA (SOL/USD) */}
             <div className="flex items-center gap-2 bg-[#1a2c38] py-2 px-3 rounded-lg border border-white/5 shadow-sm ml-2 select-none">
                 <div className={`w-2 h-2 rounded-full ${isUsdMode ? 'bg-green-500' : 'bg-purple-500'} shadow-[0_0_8px_rgba(168,85,247,0.6)]`} />
-                <span className="font-bold text-white text-sm">{isUsdMode ? 'USD' : 'SOL'}</span>
+              <span className="font-bold text-white text-sm">USDC</span>
             </div>
         </div>
         

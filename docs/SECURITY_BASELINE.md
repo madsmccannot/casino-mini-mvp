@@ -13,14 +13,14 @@ The application must remain in `CUSTODY_MODE=disabled` until a new custody/bankr
 - Production configuration fails at startup when JWT, database, RPC, or CORS settings are missing.
 - Wallet login uses a server-issued, single-use, five-minute challenge rather than a reusable arbitrary message.
 - JWTs are restricted to HS256, issuer, audience, and a 15-minute lifetime.
-- Solana addresses preserve their case and are validated canonically.
+- EVM addresses are validated as canonical 20-byte addresses and challenges bind the chain ID.
 - CORS is an explicit allowlist and JSON request bodies are limited to 32 KiB.
 - Emergency-state lookup failures block financial operations.
 - Custody defaults to disabled; deposit and withdrawal endpoints fail closed without newly configured custody.
 - Deposit signatures are uniquely recorded to reject straightforward replay credits.
 - Bet and withdrawal amounts reject non-finite values and values that cannot be represented as whole lamports.
 - Reproducible npm lockfiles are versioned.
-- The frontend uses only the browser-injected Phantom/Solflare signing surface. The Solana wallet-adapter, React Native/mobile and web3 dependency chains are removed; the browser has no casino RPC or transaction-construction capability.
+- The frontend uses RainbowKit with WalletConnect v2 and an explicit injected/Coinbase fallback. No private key or custody signer is present in the browser; transaction construction remains outside the authentication flow.
 
 ## Unresolved production blockers
 

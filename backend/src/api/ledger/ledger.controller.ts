@@ -5,10 +5,10 @@ import { JournalTransaction } from '../../ledger/journal.model';
 
 export const getMyBalance = async (req: AuthRequest, res: Response) => {
   if (!req.user?._id) return res.status(401).json({ error: 'Unauthorized' });
-  const balance = await getUnifiedBalance(req.user._id.toString());
+  const balance = await getUnifiedBalance(req.user._id.toString(), 'USDC');
   return res.json({
-    currency: 'SOL',
-    unit: 'lamports',
+    currency: 'USDC',
+    unit: 'micro-usdc',
     availableMinor: balance.availableMinor.toString(),
     reservedMinor: balance.reservedMinor.toString(),
     pendingMinor: balance.pendingMinor.toString()
@@ -18,12 +18,12 @@ export const getMyBalance = async (req: AuthRequest, res: Response) => {
 export const getMyTransactions = async (req: AuthRequest, res: Response) => {
   if (!req.user?._id) return res.status(401).json({ error: 'Unauthorized' });
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
-  const ownerPrefix = `USER:${req.user._id.toString()}:SOL:`;
+  const ownerPrefix = `USER:${req.user._id.toString()}:USDC:`;
   const transactions = await JournalTransaction.find({
     'postings.accountCode': { $in: [
-      userAccountCode(req.user._id.toString(), 'AVAILABLE'),
-      userAccountCode(req.user._id.toString(), 'RESERVED'),
-      userAccountCode(req.user._id.toString(), 'PENDING')
+      userAccountCode(req.user._id.toString(), 'AVAILABLE', 'USDC'),
+      userAccountCode(req.user._id.toString(), 'RESERVED', 'USDC'),
+      userAccountCode(req.user._id.toString(), 'PENDING', 'USDC')
     ] }
   }).sort({ postedAt: -1 }).limit(limit).lean();
 

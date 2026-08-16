@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
-  walletAddress: string;
+  accountId: string;
+  primaryWallet?: { chainFamily: 'EVM'; chainId: number; address: string };
+  walletAddress?: string;
   balance: number;
   totalWagered: number;
   
@@ -17,8 +19,14 @@ export interface IUser extends Document {
 }
 
 const UserSchema = new Schema({
-  // Solana base58 addresses are case-sensitive. Never normalize their case.
-  walletAddress: { type: String, required: true, unique: true },
+  accountId: { type: String, unique: true, sparse: true, index: true },
+  primaryWallet: {
+    chainFamily: { type: String, enum: ['EVM'] },
+    chainId: { type: Number },
+    address: { type: String, index: true }
+  },
+  // Legacy test-data compatibility only. New identities never use this field.
+  walletAddress: { type: String, sparse: true, index: true },
   balance: { type: Number, default: 0 },
   totalWagered: { type: Number, default: 0 },
   

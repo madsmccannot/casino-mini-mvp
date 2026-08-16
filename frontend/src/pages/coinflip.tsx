@@ -2,12 +2,12 @@ import type { NextPage } from 'next';
 import CoinflipUI from '../components/GameUI/CoinflipUI';
 import { api } from '../services/api';
 import { useCasinoStore } from '../state/casinoStore';
-import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../hooks/useEvmWallet';
 import { toast } from 'react-hot-toast';
 
 const CoinflipPage: NextPage = () => {
   const { balance, setBalance } = useCasinoStore();
-  const { connected } = useInjectedSolanaWallet();
+  const { connected } = useEvmWallet();
 
   const handlePlay = async (amount: number, side: 'heads' | 'tails') => {
     if (!connected) {

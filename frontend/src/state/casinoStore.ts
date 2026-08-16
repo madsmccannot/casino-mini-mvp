@@ -13,8 +13,8 @@ export interface GameResult {
 
 // Interface for Global State
 interface CasinoState {
-  balance: number;       // Saldo em SOL
-  solPrice: number;      // Preço simulado ou real (via Oracle)
+  balance: number;       // Canonical account balance in USDC
+  solPrice: number;      // Deprecated compatibility alias; USDC is USD-pegged
   isSoundEnabled: boolean;
   isAuthenticated: boolean; // Estado de login
   recentGames: GameResult[];
@@ -27,13 +27,13 @@ interface CasinoState {
   addGameResult: (result: Omit<GameResult, 'id' | 'timestamp'>) => void;
   
   // Helpers
-  getDisplayValue: (amountInSol: number, inUsd: boolean) => string;
+  getDisplayValue: (amountInUsdc: number, inUsd: boolean) => string;
   getBetAmountInSol: (inputValue: number, isUsdInput: boolean) => number;
 }
 
 export const useCasinoStore = create<CasinoState>((set, get) => ({
   balance: 0,        // Starts at 0 until wallet connects
-  solPrice: 150,     // Fixed simulated price (or fetch from Oracle in future)
+  solPrice: 1,
   isSoundEnabled: true,
   isAuthenticated: false,
   recentGames: [],
@@ -61,17 +61,14 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
     ].slice(0, 10) // Mantém apenas os últimos 10
   })),
 
-  // Formata o valor para exibição (ex: 0.5000 SOL ou $75.00)
-  getDisplayValue: (amountInSol, inUsd) => {
-    if (inUsd) {
-      return `$${(amountInSol * get().solPrice).toFixed(2)}`;
-    }
-    return `${amountInSol.toFixed(4)} SOL`;
+  // USDC is the accounting unit; the compatibility name remains for game components.
+  getDisplayValue: (amountInUsdc, inUsd) => {
+    if (inUsd) return `$${amountInUsdc.toFixed(2)}`;
+    return `${amountInUsdc.toFixed(2)} USDC`;
   },
 
-  // Converte input de aposta para SOL
-  getBetAmountInSol: (inputValue, isUsdInput) => {
-    if (!isUsdInput) return inputValue;
-    return inputValue / get().solPrice;
+  // Converts a display amount to the canonical USDC amount.
+  getBetAmountInSol: (inputValue) => {
+    return inputValue;
   }
 }));

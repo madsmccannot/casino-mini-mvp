@@ -11,6 +11,11 @@ const nextConfig = {
       },
     ],
   },
+  turbopack: {
+    // Reown's nested WalletConnect packages can ship a workspace TypeScript
+    // copy of viem. Resolve all viem imports to the pinned compiled package.
+    resolveAlias: { viem: './node_modules/viem' },
+  },
 }
 
 module.exports = nextConfig

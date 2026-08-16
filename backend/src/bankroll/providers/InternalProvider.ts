@@ -30,7 +30,7 @@ export class InternalProvider implements BankrollProvider {
 
   async getLimits(_game: string, currency: string): Promise<ProviderLimits> {
     this.assertEnabled();
-    if (currency !== 'SOL') throw new ProviderLimitError('Internal test provider only supports SOL');
+    if (currency !== 'SOL' && currency !== 'USDC') throw new ProviderLimitError('Internal test provider only supports SOL or USDC');
     const liquidity = positiveBigInt('BANKROLL_INTERNAL_LIQUIDITY_MINOR', 100_000_000_000n);
     const reserved = [...this.reservations.values()].reduce((sum, value) => sum + value.maxPayoutMinor, 0n);
     const available = liquidity > reserved ? liquidity - reserved : 0n;

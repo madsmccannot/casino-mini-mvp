@@ -22,8 +22,8 @@ export const getAccountBalance = async (accountCode: string, session?: ClientSes
 export const userAccountCode = (ownerId: string, purpose: 'AVAILABLE' | 'RESERVED' | 'PENDING', currency = 'SOL') =>
   `USER:${ownerId}:${currency}:${purpose}`;
 
-export const getUnifiedBalance = async (ownerId: string): Promise<UnifiedBalance> => ({
-  availableMinor: await getAccountBalance(userAccountCode(ownerId, 'AVAILABLE')),
-  reservedMinor: await getAccountBalance(userAccountCode(ownerId, 'RESERVED')),
-  pendingMinor: await getAccountBalance(userAccountCode(ownerId, 'PENDING'))
+export const getUnifiedBalance = async (ownerId: string, currency: 'SOL' | 'USDC' = 'SOL'): Promise<UnifiedBalance> => ({
+  availableMinor: await getAccountBalance(userAccountCode(ownerId, 'AVAILABLE', currency)),
+  reservedMinor: await getAccountBalance(userAccountCode(ownerId, 'RESERVED', currency)),
+  pendingMinor: await getAccountBalance(userAccountCode(ownerId, 'PENDING', currency))
 });

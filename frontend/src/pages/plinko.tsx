@@ -2,7 +2,7 @@ import type { NextPage } from 'next';
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useCasinoStore } from '../state/casinoStore';
-import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../hooks/useEvmWallet';
 import { api } from '../services/api';
 import PlinkoUI, { VisualBall } from '../components/GameUI/PlinkoUI';
 
@@ -28,7 +28,7 @@ let nextVisualBallId = 0;
 
 const PlinkoPage: NextPage = () => {
   const { balance, setBalance } = useCasinoStore();
-  const { connected } = useInjectedSolanaWallet();
+  const { connected } = useEvmWallet();
   const [activeBalls, setActiveBalls] = useState<VisualBall[]>([]);
 
   const handleDrop = async (rows: number, risk: string, betAmount: number) => {

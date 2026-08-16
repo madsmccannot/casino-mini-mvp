@@ -1,11 +1,11 @@
 import { Types } from 'mongoose';
 import { User } from '../models/User';
 import { userAccountCode } from './balance.service';
-import { solToLamports } from './casinoLedger.service';
+import { usdcToMinor } from './casinoLedger.service';
 import { createSystemAccount, ensureUserAccounts } from './ledger.service';
 import { postJournalTransaction, withLedgerTransaction } from './journal.service';
 
-export const LEGACY_MIGRATION_CLEARING = 'SYSTEM:SOL:LEGACY_TEST_MIGRATION_CLEARING';
+export const LEGACY_MIGRATION_CLEARING = 'SYSTEM:USDC:LEGACY_TEST_MIGRATION_CLEARING';
 
 export interface MigrationReport {
   scanned: number;
@@ -17,7 +17,7 @@ export interface MigrationReport {
 }
 
 export const migrateLegacyTestBalances = async (): Promise<MigrationReport> => {
-  await createSystemAccount(LEGACY_MIGRATION_CLEARING, 'ASSET', 'SOL', 'LEGACY_TEST_BALANCE_MIGRATION');
+  await createSystemAccount(LEGACY_MIGRATION_CLEARING, 'ASSET', 'USDC', 'LEGACY_TEST_BALANCE_MIGRATION');
   const users = await User.find({ legacyBalanceMigratedAt: { $exists: false }, isBankroll: false }).select('_id balance');
   const report: MigrationReport = { scanned: users.length, migrated: 0, zeroBalances: 0, skipped: 0, totalMinor: '0', errors: [] };
   let total = 0n;
@@ -27,18 +27,18 @@ export const migrateLegacyTestBalances = async (): Promise<MigrationReport> => {
       const migrated = await withLedgerTransaction(async (session) => {
         const user = await User.findOne({ _id: candidate._id, legacyBalanceMigratedAt: { $exists: false } }).session(session);
         if (!user) return { status: 'skipped' as const, amount: 0n };
-        const amount = user.balance === 0 ? 0n : solToLamports(user.balance);
-        await ensureUserAccounts(user._id as Types.ObjectId, 'SOL', session);
+        const amount = user.balance === 0 ? 0n : usdcToMinor(user.balance);
+        await ensureUserAccounts(user._id as Types.ObjectId, 'USDC', session);
         if (amount > 0n) {
           await postJournalTransaction({
             idempotencyKey: `migration:legacy-test-balance:${user._id.toString()}`,
             transactionType: 'OPENING_BALANCE_TEST_MIGRATION',
-            currency: 'SOL',
+            currency: 'USDC',
             referenceType: 'legacy_user_balance',
             referenceId: user._id.toString(),
             postings: [
               { accountCode: LEGACY_MIGRATION_CLEARING, side: 'DEBIT', amountMinor: amount },
-              { accountCode: userAccountCode(user._id.toString(), 'AVAILABLE'), side: 'CREDIT', amountMinor: amount }
+              { accountCode: userAccountCode(user._id.toString(), 'AVAILABLE', 'USDC'), side: 'CREDIT', amountMinor: amount }
             ],
             metadata: { testDataOnly: true }
           }, session);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import MinesUI from '../components/GameUI/MinesUI';
 import { useCasinoStore } from '../state/casinoStore';
 import { useUIStore } from '../state/uiStore';
-import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../hooks/useEvmWallet';
 import { api } from '../services/api'; 
 import { toast } from 'react-hot-toast';
 
@@ -16,7 +16,7 @@ interface Cell {
 export default function MinesPage() {
   const { balance, setBalance, getBetAmountInSol, isAuthenticated } = useCasinoStore();
   const { t } = useUIStore();
-  const { connected } = useInjectedSolanaWallet();
+  const { connected } = useEvmWallet();
   
   // Estado do Jogo
   const [grid, setGrid] = useState<Cell[]>(Array(25).fill({ revealed: false }));

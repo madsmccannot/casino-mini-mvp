@@ -17,7 +17,7 @@ export const shutdownService = {
 
         try {
             const config = await User.findOneAndUpdate(
-                { walletAddress: SYSTEM_CONFIG_ID.toLowerCase() },
+                { accountId: SYSTEM_CONFIG_ID },
                 { 
                     $set: { 
                         isTransferEnabled: isTransferActive,
@@ -49,7 +49,7 @@ export const shutdownService = {
      * @returns true se tudo estiver bem, false se estiver em emergência.
      */
     isSystemActive: async (): Promise<boolean> => {
-        const config = await User.findOne({ walletAddress: SYSTEM_CONFIG_ID.toLowerCase() });
+        const config = await User.findOne({ accountId: SYSTEM_CONFIG_ID });
         
         // Se a configuração ainda não existir, assumimos que o sistema está ATIVO (true)
         if (!config) return true;
@@ -63,17 +63,17 @@ export const shutdownService = {
      */
     exportPlayerBalances: async () => {
         const users = await User.find({
-            walletAddress: { $nin: [SYSTEM_CONFIG_ID.toLowerCase(), 'casino_bankroll'] },
+            accountId: { $nin: [SYSTEM_CONFIG_ID, 'casino_bankroll'] },
             isBankroll: false
-        }).select('_id walletAddress');
+        }).select('_id accountId primaryWallet');
         const balances = await LedgerBalance.find({
-            accountCode: { $in: users.map((user) => `USER:${user._id.toString()}:SOL:AVAILABLE`) },
+            accountCode: { $in: users.map((user) => `USER:${user._id.toString()}:USDC:AVAILABLE`) },
             amountMinor: { $gt: Types.Decimal128.fromString('0') }
         }).lean();
         const balanceByCode = new Map(balances.map((balance) => [balance.accountCode, balance.amountMinor.toString()]));
         const data = users.flatMap((user) => {
-            const balanceMinor = balanceByCode.get(`USER:${user._id.toString()}:SOL:AVAILABLE`);
-            return balanceMinor ? [{ walletAddress: user.walletAddress, balanceMinor, currency: 'SOL' }] : [];
+            const balanceMinor = balanceByCode.get(`USER:${user._id.toString()}:USDC:AVAILABLE`);
+            return balanceMinor ? [{ accountId: user.accountId, primaryWallet: user.primaryWallet, balanceMinor, currency: 'USDC' }] : [];
         });
 
         return {

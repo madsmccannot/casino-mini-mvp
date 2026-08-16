@@ -2,11 +2,11 @@ import type { AppProps } from 'next/app';
 import { Toaster } from 'react-hot-toast';
 import '../styles/globals.css';
 import Layout from '../components/Shared/Layout'; 
-import { InjectedSolanaWalletProvider } from '../hooks/useInjectedSolanaWallet';
+import { EvmProviders } from '../components/EvmProviders';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <InjectedSolanaWalletProvider>
+    <EvmProviders>
             
             <Layout>
                 {/* Fundo Global */}
@@ -32,7 +32,7 @@ function MyApp({ Component, pageProps }: AppProps) {
               }}
             />
 
-    </InjectedSolanaWalletProvider>
+    </EvmProviders>
   );
 }
 

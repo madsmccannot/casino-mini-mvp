@@ -1,4 +1,4 @@
-export const LEDGER_CURRENCIES = ['SOL'] as const;
+export const LEDGER_CURRENCIES = ['SOL', 'USDC'] as const;
 export type LedgerCurrency = typeof LEDGER_CURRENCIES[number];
 
 export const ACCOUNT_TYPES = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'] as const;

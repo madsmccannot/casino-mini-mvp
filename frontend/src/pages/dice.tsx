@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useCasinoStore } from '../state/casinoStore';
 import { useUIStore } from '../state/uiStore';
-import { useInjectedSolanaWallet } from '../hooks/useInjectedSolanaWallet';
+import { useEvmWallet } from '../hooks/useEvmWallet';
 import { api } from '../services/api';
 import DiceUI from '../components/GameUI/DiceUI'; 
 import { rngClient } from '../services/rngClient'; 
@@ -13,7 +13,7 @@ const HOUSE_EDGE = 1;
 const DicePage: NextPage = () => {
   const { balance, setBalance } = useCasinoStore();
   const { t } = useUIStore();
-  const { connected } = useInjectedSolanaWallet();
+  const { connected } = useEvmWallet();
   
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const [nonce, setNonce] = useState(1);
