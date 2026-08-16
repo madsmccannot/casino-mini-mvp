@@ -25,6 +25,7 @@ import { getMyBalance, getMyTransactions } from './api/ledger/ledger.controller'
 import { confirmWithdrawal, creditConfirmedDeposit, failWithdrawal, getUserBalanceSol, reserveWithdrawal } from './ledger/casinoLedger.service';
 import { getLedgerReconciliation } from './api/admin/reconciliation.controller';
 import crypto from 'crypto';
+import { createFairnessCommit, verifyBetFairness } from './api/games/fairness.controller';
 
 export const app = express();
 const PORT = process.env.PORT || 3001;
@@ -60,6 +61,8 @@ app.get('/api/auth/challenge', createLoginChallenge);
 // --- UNIFIED LEDGER (read-only API during Phase 1 rollout) ---
 app.get('/api/account/balance', validateBet as any, getMyBalance as any);
 app.get('/api/account/transactions', validateBet as any, getMyTransactions as any);
+app.get('/api/fairness/:betId', verifyBetFairness as any);
+app.post('/api/fairness/commit', validateBet as any, createFairnessCommit as any);
 
 // --- ADMIN ROUTES (Protegidas por validateBet que verifica isAdmin) ---
 app.post('/api/admin/emergency/toggle', validateBet as any, toggleEmergency as any); 

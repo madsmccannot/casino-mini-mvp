@@ -15,6 +15,7 @@ export interface IGameSession extends Document {
   serverSeed: string;
   commitHash: string;
   clientSeed?: string;
+  nonce?: number;
   createdAt: Date;
 }
 
@@ -37,9 +38,10 @@ const GameSessionSchema = new Schema({
   serverSeed: { type: String, required: true },
   commitHash: { type: String, required: true },
   clientSeed: { type: String },
+  nonce: { type: Number, min: 0 },
 
   // Auto-limpeza: Jogos abandonados são apagados após 24h
   createdAt: { type: Date, default: Date.now, expires: '24h' } 
-});
+}, { optimisticConcurrency: true });
 
 export const GameSession = mongoose.model<IGameSession>('GameSession', GameSessionSchema);

@@ -7,8 +7,8 @@
     "dev": "ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "npm run build && node --test dist/ledger/ledger.types.test.js dist/bankroll/providers/*.test.js",
-    "test:integration": "npm run build && LEDGER_TEST_MONGO_URI='mongodb://127.0.0.1:27017/casino_ledger_test?replicaSet=rs0&directConnection=true' node --test dist/ledger/*.integration.test.js dist/bankroll/*.integration.test.js",
+    "test": "npm run build && node --test dist/ledger/ledger.types.test.js dist/bankroll/providers/*.test.js dist/games/games.test.js",
+    "test:integration": "npm run build && LEDGER_TEST_MONGO_URI='mongodb://127.0.0.1:27017/casino_ledger_test?replicaSet=rs0&directConnection=true' node --test dist/ledger/*.integration.test.js dist/bankroll/*.integration.test.js dist/games/*.integration.test.js",
     "migrate:test-balances": "npm run build && node dist/scripts/migrateLegacyTestBalances.js",
     "ledger:reconcile": "npm run build && node dist/scripts/reconcileLedger.js",
     "ledger:recover": "npm run build && node dist/scripts/recoverLedger.js"

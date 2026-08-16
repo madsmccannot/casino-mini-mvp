@@ -30,9 +30,9 @@ const RoulettePage: NextPage = () => {
         setBalance(data.newBalance);
 
         return {
-            win: data.payout > 0,
-            resultNumber: data.result.outcome, // Backend retorna número 0-36
-            payout: data.payout
+            win: data.result.payout > 0,
+            resultNumber: data.result.outcome.number,
+            payout: data.result.payout
         };
 
     } catch (error: any) {

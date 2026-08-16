@@ -10,7 +10,7 @@ export const MAX_MULTIPLIER_GLOBAL = 1000;
 // --- LIMITES POR JOGO ---
 export const GAME_LIMITS: Record<string, RiskLimits> = {
     'dice': { 
-        maxPayoutMultiplier: 98.0, 
+        maxPayoutMultiplier: 99.0,
         maxBetAmountSOL: 20.0 
     },
     'coinflip': { 
@@ -22,7 +22,7 @@ export const GAME_LIMITS: Record<string, RiskLimits> = {
         maxBetAmountSOL: 10.0 
     },
     'plinko': { 
-        maxPayoutMultiplier: 110.0, 
+        maxPayoutMultiplier: 1000.0,
         maxBetAmountSOL: 5.0 
     },
     'mines': { 

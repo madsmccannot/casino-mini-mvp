@@ -29,9 +29,9 @@ const CoinflipPage: NextPage = () => {
 
       // 3. Retornar o resultado para a UI (FORMATO CORRIGIDO)
       return {
-        win: data.payout > 0,
-        result: data.result.outcome, // 'heads' ou 'tails'
-        payout: data.payout
+        win: data.result.payout > 0,
+        result: data.result.outcome.result,
+        payout: data.result.payout
       };
 
     } catch (error: any) {

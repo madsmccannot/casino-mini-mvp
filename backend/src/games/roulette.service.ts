@@ -1,55 +1,15 @@
-import { GameResult } from '../types';
-import { switchboardRNG } from '../rng/switchboard';
-import { rngService } from '../rng/commitReveal';
+import { createFairRandom } from './fairness';
+import { standardResult } from './game.types';
+import { validators } from './gameRegistry';
 
-interface RouletteParams {
-  color: 'red' | 'black' | 'green';
-  clientSeed?: string; 
-  nonce?: number; 
-}
+const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+export const rouletteColor = (number: number) => number === 0 ? 'green' : RED.has(number) ? 'red' : 'black';
 
-const getRouletteColor = (num: number) => {
-    if (num === 0) return 'green';
-    const redNums = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-    return redNums.includes(num) ? 'red' : 'black';
-};
-
-export const playRoulette = async (wager: number, params: RouletteParams): Promise<GameResult> => {
-  const { color, clientSeed = 'default', nonce = 0 } = params;
-  
-  if (wager <= 0) throw new Error("Aposta inválida");
-
-  // 1. Obter número seguro (0 a 1) do Switchboard
-  const randomFloat = await switchboardRNG.secureRandom();
-
-  // 2. Mapear 0-1 para um número de roleta (0-36)
-  const resultNumber = Math.floor(randomFloat * 37); 
-  
-  const resultColor = getRouletteColor(resultNumber);
-
-  const isWin = resultColor === color;
-  
-  let multiplier = 0;
-  if (color === 'green') multiplier = 14; 
-  else multiplier = 2; 
-
-  const payout = isWin ? wager * multiplier : 0;
-  
-  const proof = rngService.generateResultForGame(clientSeed, nonce).proof;
-
-  return {
-    success: true,
-    game: 'roulette',
-    wager,
-    payout,
-    multiplier: isWin ? multiplier : 0,
-    profit: payout - wager,
-    outcome: resultNumber, 
-    timestamp: new Date(),
-    
-    clientSeed: clientSeed,
-    nonce: nonce,
-    serverSeed: proof.serverSeed, 
-    commitHash: proof.commitHash,
-  };
+export const playRoulette = async (wager: number, raw: unknown, commitment?: { serverSeed: string; commitId: string; committedAt: string }) => {
+  const params = validators.roulette(wager, raw);
+  const random = createFairRandom(params.clientSeed, params.nonce, commitment?.serverSeed, commitment);
+  const number = random.integer(37);
+  const color = rouletteColor(number);
+  const multiplier = color === params.color ? (color === 'green' ? 36 : 2) : 0;
+  return standardResult('roulette', wager, wager * multiplier, multiplier, { number, color, selection: params.color }, random.proof);
 };

@@ -14,13 +14,17 @@ const MULTIPLIERS: Record<string, Record<number, number[]>> = {
   },
   'Medium': { 
     8: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
+    12: [33, 11, 4, 2, 1.1, 0.5, 0.472, 0.5, 1.1, 2, 4, 11, 33],
     16: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110]
   },
   'High': {
     8: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29],
-    16: [620, 83, 27, 8, 3, 0.5, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5, 3, 8, 27, 83, 620]
+    12: [170, 24, 8, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8, 24, 170],
+    16: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000]
   }
 };
+
+let nextVisualBallId = 0;
 
 const PlinkoPage: NextPage = () => {
   const { balance, setBalance } = useCasinoStore();
@@ -37,10 +41,10 @@ const PlinkoPage: NextPage = () => {
       setBalance(data.newBalance);
 
       const newBall: VisualBall = {
-        id: Date.now() + Math.random(),
+        id: Date.now() * 1000 + (nextVisualBallId++ % 1000),
         path: data.result.outcome.path || [], 
         finalMultiplier: data.result.multiplier,
-        payout: data.payout
+        payout: data.result.payout
       };
 
       setActiveBalls((prev) => [...prev, newBall]);

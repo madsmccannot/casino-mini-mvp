@@ -25,10 +25,19 @@ const request = async <T>(endpoint: string, init: RequestInit = {}): Promise<T> 
 export const api = {
   // --- APOSTAS ---
   placeBet: async (game: string, betAmount: number, params: any, action: string = 'bet') => {
+    let committedParams = params;
+    if (action === 'bet') {
+      const clientSeed = params?.clientSeed || crypto.randomUUID();
+      const nonce = Number.isSafeInteger(params?.nonce) && params.nonce >= 0 ? params.nonce : 0;
+      const commitment = await request<any>('fairness/commit', {
+        method: 'POST', body: JSON.stringify({ clientSeed, nonce })
+      });
+      committedParams = { ...params, clientSeed, nonce, fairnessCommitId: commitment.commitId, commitHash: commitment.commitHash };
+    }
     // O backend agora valida o user pelo Token, não precisamos de enviar walletAddress no body
     return request<any>('play', {
       method: 'POST',
-      body: JSON.stringify({ game, betAmount, params, action, idempotencyKey: crypto.randomUUID() })
+      body: JSON.stringify({ game, betAmount, params: committedParams, action, idempotencyKey: crypto.randomUUID() })
     });
   },
 

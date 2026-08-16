@@ -1,16 +1,14 @@
 import { Response } from 'express';
 import { AuthRequest } from './validateBet.middleware';
 import { Bet } from '../../models/Bet';
-import { playCoinflip } from '../../games/coinflip.service';
-import { playDice } from '../../games/dice.service';
-import { playPlinko } from '../../games/plinko.service';
-import { playRoulette } from '../../games/roulette.service';
 import { minesService } from '../../games/mines.service';
 import { riskEngine } from '../../bankroll/riskEngine';
 import { getUserBalanceSol, refundCasinoBet, reserveCasinoBet, settleCasinoBet } from '../../ledger/casinoLedger.service';
 import { GameSession } from '../../models/GameSession';
 import { authorizeBetBankroll, releaseBetBankroll, settleBetBankroll } from '../../bankroll/betBankroll.service';
-import { getGameLimits } from '../../bankroll/limits';
+import { maxMultiplierFor } from '../../games/gameRegistry';
+import { executeInstantGame, standardizedStats } from '../../games/gameExecutor';
+import { consumeFairnessCommit } from '../../games/fairnessCommit.service';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9:_-]{16,128}$/;
 
@@ -51,6 +49,7 @@ const markResultReady = async (betId: string, result: any) => Bet.findOneAndUpda
       profit: result.payout - result.wager,
       outcome: result.payout > 0 ? 'win' : 'loss',
       details: result,
+      stats: standardizedStats(result),
       status: 'RESULT_READY'
     }
   },
@@ -102,20 +101,15 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
     }
 
     if (game !== 'mines') {
-      const potentialMultiplier = params?.multiplier || 2;
+      const potentialMultiplier = maxMultiplierFor(game, params);
       const riskValidation = await riskEngine.validateBet(game, betAmount, potentialMultiplier);
       if (riskValidation !== true) return res.status(400).json({ success: false, error: riskValidation });
 
       await reserveBet(userId, idempotencyKey, game, betAmount, potentialMultiplier);
       let result: any;
       try {
-        switch (game) {
-          case 'coinflip': result = await playCoinflip(betAmount, params); break;
-          case 'dice': result = await playDice(betAmount, params); break;
-          case 'plinko': result = await playPlinko(betAmount, params); break;
-          case 'roulette': result = await playRoulette(betAmount, params); break;
-          default: throw new Error('Game not supported');
-        }
+        const commitment = await consumeFairnessCommit(userId, params?.fairnessCommitId, params?.clientSeed, params?.nonce);
+        result = await executeInstantGame(game, betAmount, params, commitment);
         await markResultReady(idempotencyKey, result);
         await settleBet(idempotencyKey, result.payout, result);
         return res.status(200).json(await completedResponse(userId.toString(), game, result));
@@ -151,12 +145,13 @@ export const placeBet = async (req: AuthRequest, res: Response) => {
           return res.status(200).json(await completedResponse(userId.toString(), game, result));
         }
       }
-      const maxMultiplier = getGameLimits('mines').maxPayoutMultiplier;
+      const maxMultiplier = maxMultiplierFor('mines', params);
       const riskValidation = await riskEngine.validateBet('mines', betAmount, maxMultiplier);
       if (riskValidation !== true) return res.status(400).json({ success: false, error: riskValidation });
       await reserveBet(userId, idempotencyKey, game, betAmount, maxMultiplier);
       try {
-        const result = await minesService.startGame(userId.toString(), idempotencyKey, betAmount, params);
+        const commitment = await consumeFairnessCommit(userId, params?.fairnessCommitId, params?.clientSeed, params?.nonce);
+        const result = await minesService.startGame(userId.toString(), idempotencyKey, betAmount, params, commitment);
         return res.status(200).json(await completedResponse(userId.toString(), game, result));
       } catch (error) {
         await refundCasinoBet(idempotencyKey).catch(() => undefined);

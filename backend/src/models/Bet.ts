@@ -10,6 +10,7 @@ export interface IBet extends Document {
   profit: number;
   outcome: 'win' | 'loss' | 'pending';
   details: any;
+  stats?: any;
   timestamp: Date;
   status: 'FUNDS_RESERVED' | 'RESULT_READY' | 'SETTLED' | 'REFUNDED' | 'FAILED';
 }
@@ -26,6 +27,7 @@ const BetSchema = new Schema({
   
   // Guardamos o resultado técnico (ex: número do dado, caminho do plinko)
   details: { type: Schema.Types.Mixed }, 
+  stats: { type: Schema.Types.Mixed },
   
   status: { type: String, enum: ['FUNDS_RESERVED', 'RESULT_READY', 'SETTLED', 'REFUNDED', 'FAILED'], required: true },
   timestamp: { type: Date, default: Date.now, index: -1 } // Ordenar do mais recente para o antigo

@@ -50,7 +50,7 @@ const DicePage: NextPage = () => {
       
       // Robustez: Backend pode chamar 'rolled' ou 'outcome'
       const rollResult = data.result.rolled ?? data.result.outcome ?? 0;
-      const payoutValue = data.payout || 0; 
+      const payoutValue = data.result.payout || 0;
       
       setLastRoll(rollResult); 
       setBalance(data.newBalance);
