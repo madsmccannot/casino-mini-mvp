@@ -22,6 +22,7 @@ export const bankrollService = {
     getHouseBalance: async (): Promise<number> => {
         try {
             const address = solanaWallet.getAddress();
+            if (!address) return 0;
             return await solana.getWalletBalance(address);
         } catch (error) {
             console.error("Critical: Failed to fetch blockchain balance", error);

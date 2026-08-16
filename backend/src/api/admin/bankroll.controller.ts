@@ -4,6 +4,7 @@ import { bankrollService } from '../../bankroll/bankroll.service';
 import { solanaWallet } from '../../wallet/solanaWallet';
 import { shutdownService } from '../../emergency/shutdown.service'; 
 import { logger } from '../../utils/logger';
+import { PublicKey } from '@solana/web3.js';
 
 /**
  * ROTA ADMIN: Obtém o estado atual da Banca e do Sistema
@@ -45,9 +46,19 @@ export const withdrawHouseFunds = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ error: "Access Denied" });
     }
 
+    if (!solanaWallet.isEnabled()) {
+        return res.status(503).json({ error: 'Custody is not configured. House withdrawals are disabled.' });
+    }
+
     const { amount, targetAddress } = req.body;
 
-    if (!amount || amount <= 0 || !targetAddress) {
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(amount * 1_000_000_000) || !targetAddress) {
+        return res.status(400).json({ error: "Invalid amount or address" });
+    }
+
+    try {
+        if (new PublicKey(targetAddress).toBase58() !== targetAddress) throw new Error('non-canonical address');
+    } catch {
         return res.status(400).json({ error: "Invalid amount or address" });
     }
 

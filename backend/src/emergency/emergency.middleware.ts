@@ -27,8 +27,10 @@ export const checkEmergencyState = async (req: Request, res: Response, next: Nex
         next();
     } catch (error) {
         console.error("Emergency middleware failed:", error);
-        // Em caso de erro (ex: BD em baixo), deixamos passar para não bloquear sem razão,
-        // mas o log acima avisa-nos.
-        next(); 
+        // Financial operations must fail closed when emergency state is unknown.
+        return res.status(503).json({
+            error: 'System state unavailable. Operations are temporarily suspended.',
+            errorCode: 'EMERGENCY_STATE_UNAVAILABLE'
+        });
     }
 };

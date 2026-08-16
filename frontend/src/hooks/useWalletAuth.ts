@@ -38,9 +38,14 @@ export const useWalletAuth = () => {
         try {
             const walletAddress = publicKey.toBase58();
 
-            // 1. Preparar a mensagem para assinar
-            // Incluir timestamp previne ataques de repetição
-            const messageString = `Login to SolCasino: ${Date.now()}`;
+            // 1. Obter um desafio curto, único e expirável do backend.
+            const challengeResponse = await fetch(
+                `${API_URL}/auth/challenge?walletAddress=${encodeURIComponent(walletAddress)}`
+            );
+            const challenge = await challengeResponse.json();
+            if (!challengeResponse.ok) throw new Error(challenge.error || 'Unable to create login challenge');
+
+            const messageString = challenge.message;
             const messageEncoded = new TextEncoder().encode(messageString);
 
             // 2. Pedir assinatura à Phantom/Solflare
@@ -54,7 +59,8 @@ export const useWalletAuth = () => {
                 body: JSON.stringify({
                     walletAddress,
                     signature,
-                    message: messageString
+                    message: messageString,
+                    nonce: challenge.nonce
                 })
             });
 

@@ -5,16 +5,8 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
 
 // --- 1. CARTEIRAS PADRÃO ---
-import { 
-  PhantomWalletAdapter, 
-  SolflareWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
-
-// --- 2. CARTEIRAS EXTRA ---
-import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack';
-import { CoinbaseWalletAdapter } from '@solana/wallet-adapter-coinbase';
-import { TrustWalletAdapter } from '@solana/wallet-adapter-trust';
-import { WalletConnectWalletAdapter } from '@solana/wallet-adapter-walletconnect';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
+import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
 
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { Toaster } from 'react-hot-toast';
@@ -41,26 +33,6 @@ function MyApp({ Component, pageProps }: AppProps) {
     () => [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
-      new BackpackWalletAdapter(),
-      new TrustWalletAdapter(),
-      new CoinbaseWalletAdapter(),
-      
-      // WalletConnect requer Project ID e Tipagem Estrita
-      ...(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ? [
-          new WalletConnectWalletAdapter({
-            // CORREÇÃO AQUI: Forçamos o tipo para satisfazer o WalletConnect
-            network: network as WalletAdapterNetwork.Mainnet | WalletAdapterNetwork.Devnet,
-            options: {
-              projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID, 
-              metadata: {
-                name: 'SolCasino',
-                description: 'The Future of Crypto Gaming',
-                url: 'https://solcasino.app',
-                icons: ['https://avatars.githubusercontent.com/u/37784886']
-              },
-            },
-          })
-      ] : []),
     ],
     [network]
   );

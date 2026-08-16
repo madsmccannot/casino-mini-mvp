@@ -2,8 +2,9 @@
 node_modules/
 **/node_modules/
 .npm
-package-lock.json # Opcional: Alguns preferem enviar, outros não. Geralmente envia-se, mas se der conflitos podes ignorar.
-yarn.lock
+# Lockfiles are required for reproducible production builds.
+!package-lock.json
+*.tsbuildinfo
 
 # --- SEGREDOS & AMBIENTE (CRÍTICO - NÃO REMOVER) ---
 .env
@@ -21,6 +22,7 @@ frontend/.env.local
 # --- CHAVES & CARTEIRAS (CRÍTICO) ---
 *.json
 !package.json
+!package-lock.json
 !tsconfig.json
 !next.config.js
 !tailwind.config.js
@@ -56,3 +58,5 @@ target/
 # --- SISTEMA OPERATIVO ---
 .DS_Store
 Thumbs.db
+
+*.txt

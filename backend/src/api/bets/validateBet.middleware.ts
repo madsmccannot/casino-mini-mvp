@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../../models/User';
+import { getJwtSecret } from '../../config/env';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -18,11 +19,13 @@ export const validateBet = async (req: AuthRequest, res: Response, next: NextFun
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET || 'dev-secret-do-not-use-in-prod';
-
     let decoded: any;
     try {
-      decoded = jwt.verify(token, secret);
+      decoded = jwt.verify(token, getJwtSecret(), {
+        algorithms: ['HS256'],
+        issuer: 'casino-mini-mvp',
+        audience: 'casino-mini-mvp-web'
+      });
     } catch (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
@@ -47,7 +50,9 @@ export const validateBet = async (req: AuthRequest, res: Response, next: NextFun
     }
 
     if (betAmount !== undefined) {
-        if (betAmount <= 0) return res.status(400).json({ error: 'Invalid bet amount' });
+        if (typeof betAmount !== 'number' || !Number.isFinite(betAmount) || betAmount <= 0 || !Number.isSafeInteger(betAmount * 1_000_000_000)) {
+          return res.status(400).json({ error: 'Invalid bet amount' });
+        }
         if (user.balance < betAmount) {
             return res.status(400).json({ error: 'Insufficient funds' });
         }

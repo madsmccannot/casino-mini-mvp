@@ -15,7 +15,8 @@ export interface IUser extends Document {
 }
 
 const UserSchema = new Schema({
-  walletAddress: { type: String, required: true, unique: true, lowercase: true },
+  // Solana base58 addresses are case-sensitive. Never normalize their case.
+  walletAddress: { type: String, required: true, unique: true },
   balance: { type: Number, default: 0 },
   totalWagered: { type: Number, default: 0 },
   

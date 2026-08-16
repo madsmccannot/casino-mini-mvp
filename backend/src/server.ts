@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv'; 
 import { connectDB } from './config/db'; 
-import { loginUser } from './controllers/authController'; 
+import { createLoginChallenge, loginUser } from './controllers/authController';
 import { User } from './models/User';
 
 // --- SOLANA ONLY ---
@@ -17,17 +17,32 @@ import { placeBet } from './api/bets/placeBet.controller';
 import { checkEmergencyState } from './emergency/emergency.middleware'; 
 import { toggleEmergency, exportBalances } from './api/admin/emergency.controller'; 
 import { getBankrollStatus, withdrawHouseFunds } from './api/admin/bankroll.controller';
+import { assertProductionConfig, getAllowedOrigins } from './config/env';
+import { DepositReceipt } from './models/DepositReceipt';
+import { PublicKey } from '@solana/web3.js';
+import { getCustodyMode } from './config/env';
 
 // --- CONFIG ---
 dotenv.config(); 
+assertProductionConfig();
 connectDB(); 
 switchboardRNG.init(); // Inicia RNG (ou fallback seguro)
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = new Set(getAllowedOrigins());
+app.disable('x-powered-by');
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error('Origin not allowed by CORS policy'));
+  },
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 600
+}));
+app.use(express.json({ limit: '32kb', strict: true }));
 
 // --- ROOT ---
 app.get('/', (_req, res) => {
@@ -36,6 +51,7 @@ app.get('/', (_req, res) => {
 
 // --- AUTH ---
 app.post('/api/auth/login', loginUser);
+app.get('/api/auth/challenge', createLoginChallenge);
 
 // --- ADMIN ROUTES (Protegidas por validateBet que verifica isAdmin) ---
 app.post('/api/admin/emergency/toggle', validateBet as any, toggleEmergency as any); 
@@ -50,14 +66,25 @@ app.post(
   checkEmergencyState,
   async (req: Request, res: Response) => {
     try {
+      if (getCustodyMode() === 'disabled') {
+        return res.status(503).json({ error: 'Custody is not configured. Deposits are disabled.' });
+      }
       const { walletAddress, signature } = req.body;
 
       if (!signature || !walletAddress) {
         return res.status(400).json({ error: 'Missing signature or wallet address.' });
       }
 
+      let canonicalAddress: string;
+      try {
+        canonicalAddress = new PublicKey(walletAddress).toBase58();
+        if (canonicalAddress !== walletAddress) throw new Error('non-canonical address');
+      } catch {
+        return res.status(400).json({ error: 'Invalid Solana wallet address.' });
+      }
+
       // 1. Auditar Transação na Blockchain
-      const auditResult = await solana.auditRecentDeposits(walletAddress, signature);
+      const auditResult = await solana.auditRecentDeposits(canonicalAddress, signature);
       
       if (!auditResult || !auditResult.isConfirmed || auditResult.amountSol <= 0) {
         return res.status(400).json({ error: 'Invalid or unconfirmed Solana transaction.' });
@@ -65,11 +92,35 @@ app.post(
 
       const amountSol = auditResult.amountSol;
 
+      try {
+        await DepositReceipt.create({
+          signature,
+          walletAddress: canonicalAddress,
+          amountSol,
+          status: 'pending_credit'
+        });
+      } catch (error: any) {
+        if (error?.code === 11000) {
+          return res.status(409).json({ error: 'Deposit transaction has already been submitted.' });
+        }
+        throw error;
+      }
+
       // 2. Creditar Saldo em SOL (Sem conversão USD)
       const updatedUser = await User.findOneAndUpdate(
-        { walletAddress: walletAddress.toLowerCase() },
+        { walletAddress: canonicalAddress },
         { $inc: { balance: amountSol } },
         { new: true }
+      );
+
+      if (!updatedUser) {
+        await DepositReceipt.updateOne({ signature }, { $set: { status: 'manual_review' } });
+        return res.status(409).json({ error: 'Account not found. Deposit queued for manual review.' });
+      }
+
+      await DepositReceipt.updateOne(
+        { signature, status: 'pending_credit' },
+        { $set: { status: 'credited', creditedAt: new Date() } }
       );
 
       console.log(`💰 Deposit: +${amountSol.toFixed(4)} SOL for ${walletAddress.slice(0,6)}...`);
@@ -91,12 +142,15 @@ app.post(
   validateBet as any, // <--- SEGURANÇA: Exige Token JWT
   async (req: AuthRequest, res: Response) => {
     try {
+      if (getCustodyMode() === 'disabled') {
+        return res.status(503).json({ error: 'Custody is not configured. Withdrawals are disabled.' });
+      }
       const { amount } = req.body;
       const user = req.user; // O middleware já carregou o user seguro
 
       if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-      if (!amount || amount <= 0) {
+      if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(amount * 1_000_000_000)) {
         return res.status(400).json({ error: 'Invalid amount.' });
       }
 

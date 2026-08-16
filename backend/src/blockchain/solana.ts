@@ -1,34 +1,17 @@
 import { Connection, PublicKey, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import bs58 from 'bs58';
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
+import { solanaWallet } from '../wallet/solanaWallet';
 
 dotenv.config();
 
 // Configuração
 const RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
-const CASINO_PRIVATE_KEY = process.env.CASINO_PRIVATE_KEY;
-
-if (!CASINO_PRIVATE_KEY) {
-    logger.error("❌ CASINO_PRIVATE_KEY missing in backend .env");
-    process.exit(1);
-}
-
 // Inicializar Conexão
 const connection = new Connection(RPC_URL, 'confirmed');
-let casinoKeypair: Keypair;
-
-try {
-    const secretKey = bs58.decode(CASINO_PRIVATE_KEY);
-    casinoKeypair = Keypair.fromSecretKey(secretKey);
-    logger.info(`✅ Solana Service Online. Casino Address: ${casinoKeypair.publicKey.toBase58()}`);
-} catch (err) {
-    logger.error("❌ Invalid CASINO_PRIVATE_KEY format.");
-    process.exit(1);
-}
 
 export const getCasinoPublicKey = () => {
-    return casinoKeypair.publicKey.toBase58();
+    return solanaWallet.getAddress();
 };
 
 /**
@@ -50,6 +33,7 @@ export const getWalletBalance = async (address: string): Promise<number> => {
  * Inclui sistema de RETRY para lidar com atrasos do RPC.
  */
 export const auditRecentDeposits = async (walletAddress: string, signature: string) => {
+    const casinoKeypair = solanaWallet.getKeypair();
     const MAX_RETRIES = 5;
     const RETRY_DELAY = 2000; // Aumentei ligeiramente para dar tempo à propagação
 
@@ -114,6 +98,7 @@ export const auditRecentDeposits = async (walletAddress: string, signature: stri
  */
 export const processWithdrawal = async (userAddress: string, amountSol: number) => {
     try {
+        const casinoKeypair = solanaWallet.getKeypair();
         // 1. Verificação de Segurança (Hot Wallet tem fundos?)
         const currentBalance = await connection.getBalance(casinoKeypair.publicKey);
         const amountLamports = Math.floor(amountSol * LAMPORTS_PER_SOL);
