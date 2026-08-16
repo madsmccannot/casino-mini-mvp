@@ -5,6 +5,8 @@ import { solanaWallet } from '../../wallet/solanaWallet';
 import { shutdownService } from '../../emergency/shutdown.service'; 
 import { logger } from '../../utils/logger';
 import { PublicKey } from '@solana/web3.js';
+import crypto from 'crypto';
+import { appendAuditEvent } from '../../observability/auditLog';
 
 /**
  * ROTA ADMIN: Obtém o estado atual da Banca e do Sistema
@@ -67,6 +69,17 @@ export const withdrawHouseFunds = async (req: AuthRequest, res: Response) => {
 
         // Usamos o bankrollService para processar a saída
         const txSignature = await bankrollService.payoutUser(targetAddress, amount); 
+        await appendAuditEvent({
+            eventId: crypto.randomUUID(),
+            actorId: req.user._id,
+            actorWallet: req.user.walletAddress,
+            action: 'HOUSE_WITHDRAWAL_SUBMITTED',
+            targetType: 'solana_transaction',
+            targetId: txSignature,
+            correlationId: req.correlationId || crypto.randomUUID(),
+            outcome: 'SUCCESS',
+            metadata: { amountMinor: Math.round(amount * 1_000_000_000).toString(), targetAddress }
+        });
 
         return res.json({
             success: true,

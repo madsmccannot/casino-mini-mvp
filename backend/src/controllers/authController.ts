@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { PublicKey } from '@solana/web3.js';
 import { AuthChallenge } from '../models/AuthChallenge';
 import { getJwtSecret } from '../config/env';
+import { getUserBalanceSol } from '../ledger/casinoLedger.service';
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const JWT_ISSUER = 'casino-mini-mvp';
@@ -59,7 +60,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const challenge = await AuthChallenge.findOneAndUpdate(
       { walletAddress: canonicalAddress, nonce, message, usedAt: { $exists: false }, expiresAt: { $gt: new Date() } },
       { $set: { usedAt: new Date() } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!challenge) return res.status(401).json({ error: 'Login challenge is invalid, expired, or already used' });
 
@@ -96,7 +97,7 @@ export const loginUser = async (req: Request, res: Response) => {
         },
         $set: { lastLogin: new Date() } // Atualiza último login
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     // 4. Gerar JWT (Sessão Segura)
@@ -114,7 +115,7 @@ export const loginUser = async (req: Request, res: Response) => {
       token, // O Frontend vai guardar isto
       user: {
         walletAddress: user.walletAddress,
-        balance: user.balance,
+        balance: await getUserBalanceSol(user._id.toString()),
       }
     });
 

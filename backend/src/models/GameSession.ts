@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IGameSession extends Document {
   userId: mongoose.Types.ObjectId;
   sessionId: string;
+  betId: string;
   game: string;
   wager: number;
   active: boolean;
@@ -20,6 +21,7 @@ export interface IGameSession extends Document {
 const GameSessionSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   sessionId: { type: String, required: true, unique: true, index: true },
+  betId: { type: String, required: true, unique: true, index: true, immutable: true },
   game: { type: String, required: true }, // ex: 'mines'
   wager: { type: Number, required: true },
   active: { type: Boolean, default: true },

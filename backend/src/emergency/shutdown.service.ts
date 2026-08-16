@@ -1,4 +1,6 @@
 import { User } from '../models/User';
+import { LedgerBalance } from '../ledger/ledgerBalance.model';
+import { Types } from 'mongoose';
 
 // ID Fixo para o documento de configuração do sistema
 const SYSTEM_CONFIG_ID = 'SYSTEM_STATUS';
@@ -25,7 +27,7 @@ export const shutdownService = {
                 },
                 { 
                     upsert: true, 
-                    new: true,    
+                    returnDocument: 'after',
                     setDefaultsOnInsert: true 
                 }
             );
@@ -62,13 +64,22 @@ export const shutdownService = {
     exportPlayerBalances: async () => {
         const users = await User.find({
             walletAddress: { $nin: [SYSTEM_CONFIG_ID.toLowerCase(), 'casino_bankroll'] },
-            balance: { $gt: 0 } 
-        }).select('walletAddress balance totalWagered'); 
+            isBankroll: false
+        }).select('_id walletAddress');
+        const balances = await LedgerBalance.find({
+            accountCode: { $in: users.map((user) => `USER:${user._id.toString()}:SOL:AVAILABLE`) },
+            amountMinor: { $gt: Types.Decimal128.fromString('0') }
+        }).lean();
+        const balanceByCode = new Map(balances.map((balance) => [balance.accountCode, balance.amountMinor.toString()]));
+        const data = users.flatMap((user) => {
+            const balanceMinor = balanceByCode.get(`USER:${user._id.toString()}:SOL:AVAILABLE`);
+            return balanceMinor ? [{ walletAddress: user.walletAddress, balanceMinor, currency: 'SOL' }] : [];
+        });
 
         return {
-            count: users.length,
+            count: data.length,
             filePath: 'balances_export.csv',
-            data: users
+            data
         };
     }
 };

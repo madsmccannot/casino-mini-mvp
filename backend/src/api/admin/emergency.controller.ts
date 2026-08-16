@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { AuthRequest } from '../bets/validateBet.middleware';
 import { shutdownService } from '../../emergency/shutdown.service';
+import crypto from 'crypto';
+import { appendAuditEvent } from '../../observability/auditLog';
 
 /**
  * ROTA ADMIN: Aciona ou desativa o modo de emergência/shutdown.
@@ -24,6 +26,15 @@ export const toggleEmergency = async (req: AuthRequest, res: Response) => {
         
         // Esta função retorna TRUE se a emergência ficar LIGADA
         const isEmergencyNowActive = await shutdownService.toggleEmergencyState(shouldEnableEmergency);
+        await appendAuditEvent({
+            eventId: crypto.randomUUID(),
+            actorId: req.user._id,
+            actorWallet: req.user.walletAddress,
+            action: shouldEnableEmergency ? 'EMERGENCY_ENABLED' : 'EMERGENCY_DISABLED',
+            targetType: 'platform',
+            correlationId: req.correlationId || crypto.randomUUID(),
+            outcome: 'SUCCESS'
+        });
 
         const message = isEmergencyNowActive 
             ? "⚠️ EMERGENCY MODE ON. Transfers and deposits DISABLED." 
@@ -53,6 +64,16 @@ export const exportBalances = async (req: AuthRequest, res: Response) => {
 
     try {
         const result = await shutdownService.exportPlayerBalances();
+        await appendAuditEvent({
+            eventId: crypto.randomUUID(),
+            actorId: req.user._id,
+            actorWallet: req.user.walletAddress,
+            action: 'BALANCE_EXPORT_REQUESTED',
+            targetType: 'ledger',
+            correlationId: req.correlationId || crypto.randomUUID(),
+            outcome: 'SUCCESS',
+            metadata: { count: result.count }
+        });
         
         return res.json({ 
             success: true, 

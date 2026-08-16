@@ -28,7 +28,7 @@ export const api = {
     // O backend agora valida o user pelo Token, não precisamos de enviar walletAddress no body
     return request<any>('play', {
       method: 'POST',
-      body: JSON.stringify({ game, betAmount, params, action })
+      body: JSON.stringify({ game, betAmount, params, action, idempotencyKey: crypto.randomUUID() })
     });
   },
 

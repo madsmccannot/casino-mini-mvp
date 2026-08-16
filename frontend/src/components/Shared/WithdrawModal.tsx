@@ -116,7 +116,8 @@ export const WithdrawModal = ({ isOpen, onClose }: Props) => {
     try {
       const response = await api.post('wallet/withdraw', {
         walletAddress: finalAddress, // Se vazio no input, usa a carteira conectada? Não, deve ser explícito ou usar a conectada se null.
-        amount: amountInSol, 
+        amount: amountInSol,
+        idempotencyKey: crypto.randomUUID()
       });
 
       if (response.success) {

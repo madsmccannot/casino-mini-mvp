@@ -20,7 +20,7 @@ const calculateMultiplier = (bombCount: number, revealedCount: number) => {
 export const minesService = {
   
   // 1. INICIAR JOGO (Agora Async e grava no Mongo)
-  startGame: async (userId: string, wager: number, params: { bombCount: number }): Promise<GameResult & { sessionId: string }> => {
+  startGame: async (userId: string, betId: string, wager: number, params: { bombCount: number }): Promise<GameResult & { sessionId: string, betId: string }> => {
     const { bombCount } = params;
     
     if (wager <= 0) throw new Error("Aposta inválida");
@@ -41,6 +41,7 @@ export const minesService = {
     // CRIAR SESSÃO NA BD
     await GameSession.create({
       userId,
+      betId,
       sessionId,
       game: 'mines',
       wager,
@@ -65,6 +66,7 @@ export const minesService = {
       nonce: Date.now(),
       timestamp: new Date(),
       sessionId,
+      betId,
       clientSeed: 'mines-session', 
       serverSeed: 'hidden',
       commitHash: commitHash 
@@ -72,7 +74,7 @@ export const minesService = {
   },
 
   // 2. REVELAR QUADRADO
-  reveal: async (userId: string, params: { sessionId: string, tileIndex: number }): Promise<GameResult> => {
+  reveal: async (userId: string, params: { sessionId: string, tileIndex: number }): Promise<GameResult & { betId: string }> => {
     const { sessionId, tileIndex } = params;
 
     // Buscar sessão à BD e garantir que pertence ao User
@@ -102,6 +104,7 @@ export const minesService = {
         clientSeed: 'mines-session',
         serverSeed: session.serverSeed, // Revela segredo
         commitHash: session.commitHash
+        ,betId: session.betId
       };
     }
 
@@ -127,11 +130,12 @@ export const minesService = {
       clientSeed: 'mines-session',
       serverSeed: 'hidden',
       commitHash: session.commitHash
+      ,betId: session.betId
     };
   },
 
   // 3. LEVANTAR (CASHOUT)
-  cashout: async (userId: string, params: { sessionId: string }): Promise<GameResult> => {
+  cashout: async (userId: string, params: { sessionId: string }): Promise<GameResult & { betId: string }> => {
     const { sessionId } = params;
     const session = await GameSession.findOne({ sessionId, userId });
 
@@ -157,6 +161,7 @@ export const minesService = {
       clientSeed: 'mines-session',
       serverSeed: session.serverSeed, 
       commitHash: session.commitHash
+      ,betId: session.betId
     };
   }
 };

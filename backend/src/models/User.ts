@@ -12,6 +12,8 @@ export interface IUser extends Document {
 
   createdAt: Date;
   lastLogin: Date;
+  legacyBalanceMigratedAt?: Date;
+  legacyBalanceMinor?: string;
 }
 
 const UserSchema = new Schema({
@@ -27,7 +29,9 @@ const UserSchema = new Schema({
   isTransferEnabled: { type: Boolean, default: true }, 
 
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date, default: Date.now }
+  lastLogin: { type: Date, default: Date.now },
+  legacyBalanceMigratedAt: { type: Date },
+  legacyBalanceMinor: { type: String }
 });
 
 export const User = mongoose.model<IUser>('User', UserSchema);

@@ -17,7 +17,6 @@ export const connectDB = async () => {
     
   } catch (error: any) {
     console.error(`❌ Error connecting to MongoDB: ${error.message}`);
-    // Se a BD falhar, o servidor não pode arrancar (Prioridade 3 & 4 dependem disto)
-    process.exit(1);
+    throw error;
   }
 };

@@ -2,9 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../../models/User';
 import { getJwtSecret } from '../../config/env';
+import { getUnifiedBalance } from '../../ledger/balance.service';
+import { solToLamports } from '../../ledger/casinoLedger.service';
 
 export interface AuthRequest extends Request {
   user?: any;
+  correlationId?: string;
 }
 
 export const validateBet = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -53,7 +56,8 @@ export const validateBet = async (req: AuthRequest, res: Response, next: NextFun
         if (typeof betAmount !== 'number' || !Number.isFinite(betAmount) || betAmount <= 0 || !Number.isSafeInteger(betAmount * 1_000_000_000)) {
           return res.status(400).json({ error: 'Invalid bet amount' });
         }
-        if (user.balance < betAmount) {
+        const balance = await getUnifiedBalance(user._id.toString());
+        if (balance.availableMinor < solToLamports(betAmount)) {
             return res.status(400).json({ error: 'Insufficient funds' });
         }
     }

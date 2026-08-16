@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv'; 
 import { connectDB } from './config/db'; 
 import { createLoginChallenge, loginUser } from './controllers/authController';
 import { User } from './models/User';
@@ -21,14 +21,12 @@ import { assertProductionConfig, getAllowedOrigins } from './config/env';
 import { DepositReceipt } from './models/DepositReceipt';
 import { PublicKey } from '@solana/web3.js';
 import { getCustodyMode } from './config/env';
+import { getMyBalance, getMyTransactions } from './api/ledger/ledger.controller';
+import { confirmWithdrawal, creditConfirmedDeposit, failWithdrawal, getUserBalanceSol, reserveWithdrawal } from './ledger/casinoLedger.service';
+import { getLedgerReconciliation } from './api/admin/reconciliation.controller';
+import crypto from 'crypto';
 
-// --- CONFIG ---
-dotenv.config(); 
-assertProductionConfig();
-connectDB(); 
-switchboardRNG.init(); // Inicia RNG (ou fallback seguro)
-
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 3001;
 
 const allowedOrigins = new Set(getAllowedOrigins());
@@ -43,21 +41,32 @@ app.use(cors({
   maxAge: 600
 }));
 app.use(express.json({ limit: '32kb', strict: true }));
+app.use((req: AuthRequest, res, next) => {
+  const incoming = req.header('x-correlation-id');
+  req.correlationId = incoming && /^[A-Za-z0-9:_-]{8,128}$/.test(incoming) ? incoming : crypto.randomUUID();
+  res.setHeader('x-correlation-id', req.correlationId);
+  next();
+});
 
 // --- ROOT ---
 app.get('/', (_req, res) => {
-  res.json({ status: 'SolCasino Backend Online 🚀', mode: 'SOL_NATIVE' });
+  res.json({ status: 'Casino backend online', custodyMode: getCustodyMode() });
 });
 
 // --- AUTH ---
 app.post('/api/auth/login', loginUser);
 app.get('/api/auth/challenge', createLoginChallenge);
 
+// --- UNIFIED LEDGER (read-only API during Phase 1 rollout) ---
+app.get('/api/account/balance', validateBet as any, getMyBalance as any);
+app.get('/api/account/transactions', validateBet as any, getMyTransactions as any);
+
 // --- ADMIN ROUTES (Protegidas por validateBet que verifica isAdmin) ---
 app.post('/api/admin/emergency/toggle', validateBet as any, toggleEmergency as any); 
 app.post('/api/admin/emergency/export', validateBet as any, exportBalances as any); 
 app.get('/api/admin/bankroll', validateBet as any, getBankrollStatus as any);
 app.post('/api/admin/bankroll/withdraw', validateBet as any, withdrawHouseFunds as any);
+app.get('/api/admin/ledger/reconciliation', validateBet as any, getLedgerReconciliation as any);
 
 // --- DEPOSIT (SOL NATIVE) ---
 // Depósitos são públicos (qualquer um pode mandar dinheiro), validamos pela assinatura na blockchain
@@ -92,31 +101,27 @@ app.post(
 
       const amountSol = auditResult.amountSol;
 
-      try {
-        await DepositReceipt.create({
+      let receipt = await DepositReceipt.findOne({ signature });
+      if (receipt && (receipt.walletAddress !== canonicalAddress || receipt.amountSol !== amountSol)) {
+        return res.status(409).json({ error: 'Deposit receipt does not match the submitted transaction.' });
+      }
+      if (!receipt) {
+        receipt = await DepositReceipt.create({
           signature,
           walletAddress: canonicalAddress,
           amountSol,
           status: 'pending_credit'
         });
-      } catch (error: any) {
-        if (error?.code === 11000) {
-          return res.status(409).json({ error: 'Deposit transaction has already been submitted.' });
-        }
-        throw error;
       }
 
-      // 2. Creditar Saldo em SOL (Sem conversão USD)
-      const updatedUser = await User.findOneAndUpdate(
-        { walletAddress: canonicalAddress },
-        { $inc: { balance: amountSol } },
-        { new: true }
-      );
+      const user = await User.findOne({ walletAddress: canonicalAddress });
 
-      if (!updatedUser) {
+      if (!user) {
         await DepositReceipt.updateOne({ signature }, { $set: { status: 'manual_review' } });
         return res.status(409).json({ error: 'Account not found. Deposit queued for manual review.' });
       }
+
+      await creditConfirmedDeposit(user._id, signature, amountSol);
 
       await DepositReceipt.updateOne(
         { signature, status: 'pending_credit' },
@@ -125,7 +130,7 @@ app.post(
 
       console.log(`💰 Deposit: +${amountSol.toFixed(4)} SOL for ${walletAddress.slice(0,6)}...`);
 
-      res.json({ success: true, newBalance: updatedUser?.balance });
+      res.json({ success: true, newBalance: await getUserBalanceSol(user._id.toString()) });
 
     } catch (error: any) {
       console.error('Deposit error:', error.message);
@@ -145,7 +150,7 @@ app.post(
       if (getCustodyMode() === 'disabled') {
         return res.status(503).json({ error: 'Custody is not configured. Withdrawals are disabled.' });
       }
-      const { amount } = req.body;
+      const { amount, idempotencyKey } = req.body;
       const user = req.user; // O middleware já carregou o user seguro
 
       if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -153,38 +158,26 @@ app.post(
       if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(amount * 1_000_000_000)) {
         return res.status(400).json({ error: 'Invalid amount.' });
       }
-
-      // 1. Verificar Saldo (SOL)
-      if (user.balance < amount) {
-        return res.status(400).json({ error: 'Insufficient SOL balance.' });
+      if (typeof idempotencyKey !== 'string' || !/^[A-Za-z0-9:_-]{16,128}$/.test(idempotencyKey)) {
+        return res.status(400).json({ error: 'A valid idempotencyKey is required.' });
       }
 
-      // 2. Bloquear Fundos (Atomicamente) antes de enviar
-      // Isto evita Race Conditions onde o user tenta levantar 2x rápido
-      const updatedUser = await User.findOneAndUpdate(
-        { _id: user._id, balance: { $gte: amount } },
-        { $inc: { balance: -amount } },
-        { new: true }
-      );
-
-      if (!updatedUser) {
-        return res.status(400).json({ error: 'Insufficient balance (Concurrency check).' });
-      }
+      await reserveWithdrawal(user._id, idempotencyKey, amount);
 
       console.log(`💸 Withdraw Request: ${amount} SOL to ${user.walletAddress}`);
 
       try {
         // 3. Enviar SOL na Blockchain
         const result = await solana.processWithdrawal(user.walletAddress, amount);
+        await confirmWithdrawal(idempotencyKey);
 
         console.log(`✅ Paid! TX: ${result.tx}`);
-        res.json({ success: true, newBalance: updatedUser.balance, tx: result.tx });
+        res.json({ success: true, newBalance: await getUserBalanceSol(user._id.toString()), tx: result.tx });
 
       } catch (blockchainError: any) {
         console.error('❌ Solana Payout Error:', blockchainError.message);
         
-        // REEMBOLSO DE EMERGÊNCIA: Se a blockchain falhar, devolvemos o saldo
-        await User.findByIdAndUpdate(user._id, { $inc: { balance: amount } });
+        await failWithdrawal(idempotencyKey);
         
         res.status(500).json({ error: 'Blockchain transfer failed. Funds refunded to balance.' });
       }
@@ -199,7 +192,18 @@ app.post(
 // --- GAME ROUTE ---
 app.post('/api/play', checkEmergencyState, validateBet as any, placeBet as any);
 
-// --- START ---
-app.listen(PORT, () => {
-  console.log(`\n🎲 Backend running on http://localhost:${PORT}`);
-});
+export const startServer = async () => {
+  assertProductionConfig();
+  await connectDB();
+  await switchboardRNG.init();
+  return app.listen(PORT, () => {
+    console.log(`\nBackend running on port ${PORT}`);
+  });
+};
+
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error('Backend startup failed:', error);
+    process.exitCode = 1;
+  });
+}
