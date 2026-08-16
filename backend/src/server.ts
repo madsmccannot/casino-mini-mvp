@@ -19,7 +19,7 @@ import { toggleEmergency, exportBalances } from './api/admin/emergency.controlle
 import { getBankrollStatus, withdrawHouseFunds } from './api/admin/bankroll.controller';
 import { assertProductionConfig, getAllowedOrigins } from './config/env';
 import { DepositReceipt } from './models/DepositReceipt';
-import { PublicKey } from '@solana/web3.js';
+import bs58 from 'bs58';
 import { getCustodyMode } from './config/env';
 import { getMyBalance, getMyTransactions } from './api/ledger/ledger.controller';
 import { confirmWithdrawal, creditConfirmedDeposit, failWithdrawal, getUserBalanceSol, reserveWithdrawal } from './ledger/casinoLedger.service';
@@ -32,6 +32,7 @@ import { listSportsEvents, getSportsEvent } from './api/sports/events.controller
 import { cashoutSportsTicket, createSportsTicket, getSportsCashoutQuote, listMySportsTickets } from './api/sports/tickets.controller';
 import { getSportsOperations, publishSandboxSettlement, runSportsIngest, runSportsSettlement } from './api/admin/sports.controller';
 import { attachSportsOddsStream } from './sportsbook/feeds/liveOdds.service';
+import { getCatalog, launchCatalog, wagerCatalog } from './api/casinoCatalog.controller';
 
 export const app = express();
 const PORT = process.env.PORT || 3001;
@@ -87,6 +88,9 @@ app.post('/api/sports/tickets', checkEmergencyState, validateBet as any, createS
 app.get('/api/sports/tickets', validateBet as any, listMySportsTickets as any);
 app.get('/api/sports/tickets/:ticketId/cashout', validateBet as any, getSportsCashoutQuote as any);
 app.post('/api/sports/tickets/:ticketId/cashout', checkEmergencyState, validateBet as any, cashoutSportsTicket as any);
+app.get('/api/casino/catalog', getCatalog as any);
+app.post('/api/casino/catalog/launch', validateBet as any, launchCatalog as any);
+app.post('/api/casino/catalog/wagers', checkEmergencyState, validateBet as any, wagerCatalog as any);
 
 // --- DEPOSIT (SOL NATIVE) ---
 // Depósitos são públicos (qualquer um pode mandar dinheiro), validamos pela assinatura na blockchain
@@ -106,8 +110,9 @@ app.post(
 
       let canonicalAddress: string;
       try {
-        canonicalAddress = new PublicKey(walletAddress).toBase58();
-        if (canonicalAddress !== walletAddress) throw new Error('non-canonical address');
+        const decoded = bs58.decode(walletAddress);
+        if (decoded.length !== 32 || bs58.encode(decoded) !== walletAddress) throw new Error('non-canonical address');
+        canonicalAddress = walletAddress;
       } catch {
         return res.status(400).json({ error: 'Invalid Solana wallet address.' });
       }

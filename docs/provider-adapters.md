@@ -16,3 +16,5 @@
 - sandbox certification and failure drills pass before enabling production.
 
 `SportradarProvider` remains disabled until an agreement and verified integration package supply these facts. Additional providers can implement the same contract without changing tickets or the ledger.
+
+The external casino catalog follows a separate `CasinoCatalogProvider` contract. It owns the game catalog, launch sessions, wager acceptance and provider outcomes. Catalog wagers reserve and settle through the same unified ledger, while `AggregatorCasinoCatalogProvider` remains fail-closed until an authenticated commercial integration package is available.

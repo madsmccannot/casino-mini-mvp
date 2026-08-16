@@ -4,9 +4,10 @@ import { ingestSportsFeed, markStaleMarkets } from './feeds/eventFeed.service'; 
 import { app } from '../server'; import jwt from 'jsonwebtoken'; import { getJwtSecret } from '../config/env'; import { AddressInfo } from 'node:net'; import WebSocket from 'ws'; import { attachSportsOddsStream } from './feeds/liveOdds.service';
 import { acceptSportsCashout, quoteSportsCashout } from './tickets/cashout.service';
 import { SportsCashoutQuote } from './models/SportsCashoutQuote';
+import { launchCatalogGame, listCatalog, placeCatalogWager } from '../casinoCatalog/catalog.service';
 
 const uri = process.env.LEDGER_TEST_MONGO_URI; if (!uri) throw new Error('LEDGER_TEST_MONGO_URI is required'); let user: any;
-before(async () => { process.env.NODE_ENV = 'test'; process.env.SPORTSBOOK_PROVIDER = 'sandbox'; process.env.SPORTSBOOK_SANDBOX_MODE = 'enabled'; await mongoose.connect(uri.replace('/casino_ledger_test?', '/casino_sportsbook_test?')); await mongoose.connection.dropDatabase(); user = await User.create({ walletAddress: 'sportsbook-test-user', balance: 10 }); const migration = await migrateLegacyTestBalances(); assert.equal(migration.errors.length, 0); });
+before(async () => { process.env.NODE_ENV = 'test'; process.env.SPORTSBOOK_PROVIDER = 'sandbox'; process.env.SPORTSBOOK_SANDBOX_MODE = 'enabled'; process.env.CASINO_CATALOG_PROVIDER = 'sandbox'; process.env.CASINO_CATALOG_SANDBOX_MODE = 'enabled'; await mongoose.connect(uri.replace('/casino_ledger_test?', '/casino_sportsbook_test?')); await mongoose.connection.dropDatabase(); user = await User.create({ walletAddress: 'sportsbook-test-user', balance: 10 }); const migration = await migrateLegacyTestBalances(); assert.equal(migration.errors.length, 0); });
 beforeEach(async () => { await ingestSportsFeed(); }); after(async () => mongoose.disconnect());
 const quote = (market: any, index = 0) => ({ selectionId: market.selections[index].selectionId, displayedMarketVersion: market.version, displayedOddsMillionths: market.selections[index].oddsMillionths.toString() });
 
@@ -93,4 +94,12 @@ test('Sports HTTP API and WebSocket stream expose versioned provider odds end to
   const streamed: any = await new Promise((resolve, reject) => { const client = new WebSocket(`ws://127.0.0.1:${port}/api/sports/stream`); const timeout = setTimeout(() => reject(new Error('Sports odds WebSocket timed out')), 4_000); client.once('message', data => { clearTimeout(timeout); client.close(); resolve(JSON.parse(data.toString())); }); client.once('error', reject); });
   assert.equal(streamed.type, 'odds'); assert.ok(streamed.markets.every((value: any) => Number.isSafeInteger(value.version)));
   await new Promise<void>(resolve => sockets.close(() => resolve())); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+});
+
+test('external casino catalog settles provider outcome through the unified ledger', async () => {
+  const games = await listCatalog(); assert.equal(games.length, 4); const launch = await launchCatalogGame(user._id, games[0].gameId);
+  const first: any = await placeCatalogWager(user._id, { wagerId: 'catalog:wager:integration:001', sessionId: launch.sessionId, stakeSol: 0.001 });
+  assert.equal(first.wager.status, 'SETTLED'); assert.ok(['WIN', 'LOSS'].includes(first.wager.outcome));
+  const again: any = await placeCatalogWager(user._id, { wagerId: 'catalog:wager:integration:001', sessionId: launch.sessionId, stakeSol: 0.001 });
+  assert.equal(again.wager.wagerId, first.wager.wagerId); assert.equal(again.newBalance, first.newBalance);
 });

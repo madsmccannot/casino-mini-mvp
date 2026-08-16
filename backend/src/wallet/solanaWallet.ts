@@ -1,9 +1,5 @@
-import { Keypair } from '@solana/web3.js';
-
-// Legacy wallet custody was intentionally retired. This compatibility object keeps
-// old call sites fail-closed until they are replaced by approved provider workflows.
+// Compatibility boundary retained for imports during the custody migration.
 export const solanaWallet = {
-  isEnabled: (): boolean => false,
-  getKeypair: (): Keypair => { throw new Error('Legacy wallet custody is retired'); },
-  getAddress: (): null => null
+  getAddress: (): never => { throw new Error('Legacy wallet custody is retired'); },
+  getKeypair: (): never => { throw new Error('Legacy wallet custody is retired'); }
 };

@@ -43,7 +43,6 @@ export const assertProductionConfig = (): void => {
   getAllowedOrigins();
   if (isProduction) {
     required('MONGO_URI');
-    required('SOLANA_RPC_URL');
   }
   getCustodyMode();
   const bankrollProvider = process.env.BANKROLL_PROVIDER?.trim() || 'disabled';
@@ -56,4 +55,7 @@ export const assertProductionConfig = (): void => {
   const sportsProvider = process.env.SPORTSBOOK_PROVIDER?.trim() || 'disabled';
   if (!['disabled', 'sandbox', 'sportradar'].includes(sportsProvider)) throw new Error('SPORTSBOOK_PROVIDER must be disabled, sandbox, or sportradar');
   if (isProduction && sportsProvider === 'sandbox') throw new Error('SPORTSBOOK_PROVIDER=sandbox is forbidden in production');
+  const catalogProvider = process.env.CASINO_CATALOG_PROVIDER?.trim() || 'disabled';
+  if (!['disabled', 'sandbox', 'aggregator'].includes(catalogProvider)) throw new Error('CASINO_CATALOG_PROVIDER must be disabled, sandbox, or aggregator');
+  if (isProduction && catalogProvider === 'sandbox') throw new Error('CASINO_CATALOG_PROVIDER=sandbox is forbidden in production');
 };

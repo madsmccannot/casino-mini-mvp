@@ -4,7 +4,6 @@ import nacl from 'tweetnacl'; // Criptografia
 import bs58 from 'bs58';       // Codificação Solana
 import jwt from 'jsonwebtoken'; // Token de Sessão
 import crypto from 'crypto';
-import { PublicKey } from '@solana/web3.js';
 import { AuthChallenge } from '../models/AuthChallenge';
 import { getJwtSecret } from '../config/env';
 import { getUserBalanceSol } from '../ledger/casinoLedger.service';
@@ -12,12 +11,17 @@ import { getUserBalanceSol } from '../ledger/casinoLedger.service';
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const JWT_ISSUER = 'casino-mini-mvp';
 const JWT_AUDIENCE = 'casino-mini-mvp-web';
+const canonicalAddress = (value: string) => {
+  const decoded = bs58.decode(value);
+  if (decoded.length !== 32 || bs58.encode(decoded) !== value) throw new Error('non-canonical address');
+  return value;
+};
 
 export const createLoginChallenge = async (req: Request, res: Response) => {
   try {
     const walletAddress = String(req.query.walletAddress || '');
     try {
-      if (new PublicKey(walletAddress).toBase58() !== walletAddress) throw new Error('non-canonical address');
+      canonicalAddress(walletAddress);
     } catch {
       return res.status(400).json({ error: 'Invalid Solana wallet address' });
     }
@@ -50,8 +54,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     let canonicalAddress: string;
     try {
-      canonicalAddress = new PublicKey(walletAddress).toBase58();
-      if (canonicalAddress !== walletAddress) throw new Error('non-canonical address');
+      canonicalAddress = canonicalAddressValue(walletAddress);
     } catch {
       return res.status(400).json({ error: 'Invalid Solana wallet address' });
     }
@@ -124,3 +127,5 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erro no servidor ao fazer login" });
   }
 };
+
+function canonicalAddressValue(value: string) { return canonicalAddress(value); }
