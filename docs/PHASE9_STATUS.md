@@ -12,6 +12,8 @@ Implemented in the repository:
 - readiness fails closed in production while financial providers/custody remain disabled;
 - canonical wallet path remains EVM + WalletConnect/RainbowKit with internal Account ID;
 - no browser private keys, undocumented wallet custody or guessed provider settlement was introduced.
+- legacy Solana deposit/withdraw endpoints now return `410 Gone` rather than
+  retaining an executable transfer path.
 
 Remaining launch blockers are intentionally not simulated:
 

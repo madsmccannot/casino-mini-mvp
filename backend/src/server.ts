@@ -5,8 +5,6 @@ import { connectDB } from './config/db';
 import { createLoginChallenge, loginUser } from './controllers/authController';
 import { User } from './models/User';
 
-// --- SOLANA ONLY ---
-import * as solana from './blockchain/solana'; 
 import { switchboardRNG } from './rng/switchboard';
 
 // --- GAME ROUTES & MIDDLEWARE ---
@@ -18,12 +16,9 @@ import { checkEmergencyState } from './emergency/emergency.middleware';
 import { toggleEmergency, exportBalances } from './api/admin/emergency.controller'; 
 import { getBankrollStatus, withdrawHouseFunds } from './api/admin/bankroll.controller';
 import { assertProductionConfig, getAllowedOrigins } from './config/env';
-import { DepositReceipt } from './models/DepositReceipt';
-import bs58 from 'bs58';
 import { getCustodyMode } from './config/env';
 import { getProductionReadiness } from './config/productionReadiness';
 import { getMyBalance, getMyTransactions } from './api/ledger/ledger.controller';
-import { confirmWithdrawal, creditConfirmedDeposit, failWithdrawal, getUserBalanceSol, reserveWithdrawal } from './ledger/casinoLedger.service';
 import { getLedgerReconciliation } from './api/admin/reconciliation.controller';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
@@ -128,127 +123,10 @@ app.get('/api/casino/catalog', getCatalog as any);
 app.post('/api/casino/catalog/launch', validateBet as any, launchCatalog as any);
 app.post('/api/casino/catalog/wagers', checkEmergencyState, validateBet as any, wagerCatalog as any);
 
-// --- DEPOSIT (SOL NATIVE) ---
-// Depósitos são públicos (qualquer um pode mandar dinheiro), validamos pela assinatura na blockchain
-app.post(
-  '/api/wallet/deposit',
-  checkEmergencyState,
-  async (req: Request, res: Response) => {
-    try {
-      if (getCustodyMode() === 'disabled') {
-        return res.status(503).json({ error: 'Custody is not configured. Deposits are disabled.' });
-      }
-      const { walletAddress, signature } = req.body;
-
-      if (!signature || !walletAddress) {
-        return res.status(400).json({ error: 'Missing signature or wallet address.' });
-      }
-
-      let canonicalAddress: string;
-      try {
-        const decoded = bs58.decode(walletAddress);
-        if (decoded.length !== 32 || bs58.encode(decoded) !== walletAddress) throw new Error('non-canonical address');
-        canonicalAddress = walletAddress;
-      } catch {
-        return res.status(400).json({ error: 'Invalid Solana wallet address.' });
-      }
-
-      // 1. Auditar Transação na Blockchain
-      const auditResult = await solana.auditRecentDeposits(canonicalAddress, signature);
-      
-      if (!auditResult || !auditResult.isConfirmed || auditResult.amountSol <= 0) {
-        return res.status(400).json({ error: 'Invalid or unconfirmed Solana transaction.' });
-      }
-
-      const amountSol = auditResult.amountSol;
-
-      let receipt = await DepositReceipt.findOne({ signature });
-      if (receipt && (receipt.walletAddress !== canonicalAddress || receipt.amountSol !== amountSol)) {
-        return res.status(409).json({ error: 'Deposit receipt does not match the submitted transaction.' });
-      }
-      if (!receipt) {
-        receipt = await DepositReceipt.create({
-          signature,
-          walletAddress: canonicalAddress,
-          amountSol,
-          status: 'pending_credit'
-        });
-      }
-
-      const user = await User.findOne({ walletAddress: canonicalAddress });
-
-      if (!user) {
-        await DepositReceipt.updateOne({ signature }, { $set: { status: 'manual_review' } });
-        return res.status(409).json({ error: 'Account not found. Deposit queued for manual review.' });
-      }
-
-      await creditConfirmedDeposit(user._id, signature, amountSol);
-
-      await DepositReceipt.updateOne(
-        { signature, status: 'pending_credit' },
-        { $set: { status: 'credited', creditedAt: new Date() } }
-      );
-
-      console.log(`💰 Deposit: +${amountSol.toFixed(4)} SOL for ${walletAddress.slice(0,6)}...`);
-
-      res.json({ success: true, newBalance: await getUserBalanceSol(user._id.toString()) });
-
-    } catch (error: any) {
-      console.error('Deposit error:', error.message);
-      res.status(500).json({ error: 'Deposit processing error.' });
-    }
-  }
-);
-
-// --- WITHDRAW (SOL NATIVE & SECURE) ---
-// Alteração Crítica: Agora usa 'validateBet' para garantir que só o dono da conta levanta o dinheiro
-app.post(
-  '/api/wallet/withdraw',
-  checkEmergencyState,
-  validateBet as any, // <--- SEGURANÇA: Exige Token JWT
-  async (req: AuthRequest, res: Response) => {
-    try {
-      if (getCustodyMode() === 'disabled') {
-        return res.status(503).json({ error: 'Custody is not configured. Withdrawals are disabled.' });
-      }
-      const { amount, idempotencyKey } = req.body;
-      const user = req.user; // O middleware já carregou o user seguro
-
-      if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-      if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(amount * 1_000_000_000)) {
-        return res.status(400).json({ error: 'Invalid amount.' });
-      }
-      if (typeof idempotencyKey !== 'string' || !/^[A-Za-z0-9:_-]{16,128}$/.test(idempotencyKey)) {
-        return res.status(400).json({ error: 'A valid idempotencyKey is required.' });
-      }
-
-      await reserveWithdrawal(user._id, idempotencyKey, amount);
-
-      console.log(`💸 Withdraw Request: ${amount} SOL to ${user.walletAddress}`);
-
-      try {
-        // 3. Enviar SOL na Blockchain
-        const result = await solana.processWithdrawal(user.walletAddress, amount);
-        await confirmWithdrawal(idempotencyKey);
-
-        console.log(`✅ Paid! TX: ${result.tx}`);
-        res.json({ success: true, newBalance: await getUserBalanceSol(user._id.toString()), tx: result.tx });
-
-      } catch (blockchainError: any) {
-        console.error('❌ Solana Payout Error:', blockchainError.message);
-        
-        await failWithdrawal(idempotencyKey);
-        
-        res.status(500).json({ error: 'Blockchain transfer failed. Funds refunded to balance.' });
-      }
-
-    } catch (error) {
-      console.error('Withdraw error:', error);
-      res.status(500).json({ error: 'Internal server error.' });
-    }
-  }
-);
+// Legacy Solana money movement is retired. Keep explicit responses so an old
+// client cannot accidentally interpret a disabled path as a pending transfer.
+app.post('/api/wallet/deposit', (_req, res) => res.status(410).json({ error: 'Legacy Solana deposits are retired. Use the approved EVM provider flow when enabled.' }));
+app.post('/api/wallet/withdraw', (_req, res) => res.status(410).json({ error: 'Legacy Solana withdrawals are retired. Use the approved EVM provider flow when enabled.' }));
 
 // --- GAME ROUTE ---
 app.post('/api/play', checkEmergencyState, validateBet as any, placeBet as any);

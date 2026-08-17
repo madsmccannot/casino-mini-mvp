@@ -126,29 +126,29 @@ integrationTest('migrates legacy test balances exactly once', async () => {
   const user = await User.create({ walletAddress: 'migration-test-wallet', balance: 1.25 });
   const first = await migrateLegacyTestBalances();
   assert.equal(first.migrated, 1);
-  assert.equal(first.totalMinor, '1250000000');
+  assert.equal(first.totalMinor, '1250000');
   const migrated = await User.findById(user._id);
   assert.equal(migrated?.balance, 0);
-  assert.equal(migrated?.legacyBalanceMinor, '1250000000');
-  assert.equal((await getUnifiedBalance(user._id.toString())).availableMinor, 1_250_000_000n);
+  assert.equal(migrated?.legacyBalanceMinor, '1250000');
+  assert.equal((await getUnifiedBalance(user._id.toString(), 'USDC')).availableMinor, 1_250_000n);
   const second = await migrateLegacyTestBalances();
   assert.equal(second.migrated, 0);
-  assert.equal((await getUnifiedBalance(user._id.toString())).availableMinor, 1_250_000_000n);
+  assert.equal((await getUnifiedBalance(user._id.toString(), 'USDC')).availableMinor, 1_250_000n);
 });
 
 integrationTest('recovers a persisted result without rerunning or double-paying it', async () => {
   const user = await User.findOne({ walletAddress: 'migration-test-wallet' });
   assert.ok(user);
-  const before = (await getUnifiedBalance(user._id.toString())).availableMinor;
-  await reserveCasinoBet(user._id, 'recovery-bet-id', 0.0000001);
+  const before = (await getUnifiedBalance(user._id.toString(), 'USDC')).availableMinor;
+  await reserveCasinoBet(user._id, 'recovery-bet-id', 0.0001);
   await Bet.create({
     betId: 'recovery-bet-id',
     userId: user._id,
     game: 'coinflip',
-    wager: 0.0000001,
-    payout: 0.0000002,
+    wager: 0.0001,
+    payout: 0.0002,
     multiplier: 2,
-    profit: 0.0000001,
+    profit: 0.0001,
     outcome: 'win',
     status: 'RESULT_READY',
     details: { persisted: true }
@@ -157,7 +157,7 @@ integrationTest('recovers a persisted result without rerunning or double-paying 
   assert.equal(first.settled, 1);
   const second = await recoverResultReadyBets();
   assert.equal(second.scanned, 0);
-  assert.equal((await getUnifiedBalance(user._id.toString())).availableMinor, before + 100n);
+  assert.equal((await getUnifiedBalance(user._id.toString(), 'USDC')).availableMinor, before + 100n);
 });
 
 integrationTest('journal is immutable and reconciliation is healthy', async () => {

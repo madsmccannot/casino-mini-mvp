@@ -17,7 +17,7 @@ Every game uses authoritative server-side limits, durable fund/exposure reservat
 
 Phase 8 adds the authenticated account area at `/account`: profile display name, safe bet history, Originals favourites and a retention-status surface. Referral codes are generated for account continuity, while cashback, VIP, missions, leaderboard, promotions and referral rewards remain explicitly disabled and non-financial until separately implemented, reviewed and approved for production.
 
-Phase 9 technical hardening is tracked in `docs/PHASE9_STATUS.md`. The service exposes `/health/live` and `/health/ready`, applies production security headers and fails readiness while licensing, KYC/AML, geofencing, responsible-gaming, custody/provider, audit, monitoring and disaster-recovery evidence is incomplete. Wallet authentication is EVM + WalletConnect/RainbowKit; deposits and withdrawals remain fail-closed.
+Phase 9 technical hardening is tracked in `docs/PHASE9_STATUS.md`, with the full phase-by-phase release audit in `docs/PHASE_AUDIT.md`. The service exposes `/health/live` and `/health/ready`, applies production security headers and fails readiness while licensing, KYC/AML, geofencing, responsible-gaming, custody/provider, audit, monitoring and disaster-recovery evidence is incomplete. Wallet authentication is EVM + WalletConnect/RainbowKit; deposits and withdrawals remain fail-closed.
 
 ## Stack
 

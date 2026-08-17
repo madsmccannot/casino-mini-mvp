@@ -29,11 +29,11 @@ The application must remain in `CUSTODY_MODE=disabled` until a new custody/bankr
 3. Replace direct hot-wallet signing with an approved custody/HSM/MPC or external bankroll provider design, with withdrawal policy and approval controls.
 4. Require finalized chain state and implement deposit/withdrawal reconciliation, reorg handling, retry workers, and manual-review tooling.
 5. Replace the current RNG/proof implementation. Several games generate their outcome independently from the seed returned as the alleged proof.
-6. Add rate limiting, abuse controls, session revocation/rotation, audit events, and administrator step-up authentication.
+6. Extend the bounded authentication rate limits with distributed abuse controls, session revocation/rotation, and administrator step-up authentication. Correlation IDs and append-only audit events are already present.
 7. Add schema validation for every API request and strict per-game parameter validation.
 8. Add unit, integration, concurrency, and end-to-end tests for all five games and every money-state transition.
 9. Upgrade or replace vulnerable frontend/backend dependencies. Builds currently pass, but dependency advisories remain.
-10. Add CSP and remaining HTTP security headers, observability, alerting, backups, recovery drills, and external penetration testing.
+10. Add an enforced CSP (after validating WalletConnect/analytics origins), observability, alerting, backups, recovery drills, and external penetration testing. Baseline response headers, liveness/readiness probes and production fail-closed readiness are now present.
 11. Complete legal, licensing, KYC/AML, geofencing, age, and responsible-gaming gates before any real-money launch.
 
 ## Required release rule
