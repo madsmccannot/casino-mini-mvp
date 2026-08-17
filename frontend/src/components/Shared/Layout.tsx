@@ -73,6 +73,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, []);
 
   const currentLangObj = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
+  const isSportsArea = router.pathname === '/sports' || router.pathname.startsWith('/sports/');
 
   return (
     <div className="min-h-screen bg-[#0c0f17] text-white font-sans flex flex-col selection:bg-blue-500/30">
@@ -128,11 +129,33 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
          </div>
       </header>
 
+      {/* Product navigation stays visible so Casino and Sports are always one click away. */}
+      <nav className="fixed left-0 right-0 top-20 z-40 border-b border-white/10 bg-[#111722]/95 px-3 shadow-lg shadow-black/10 backdrop-blur-md md:left-56" aria-label="Product navigation">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-center px-2">
+          <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#0a0f19]/90 p-1 shadow-inner shadow-black/30">
+          <Link
+            href="/casino"
+            aria-current={!isSportsArea ? 'page' : undefined}
+            className={`relative flex h-10 min-w-[132px] items-center justify-center gap-2 rounded-xl px-6 text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${!isSportsArea ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-950/50 ring-1 ring-blue-300/30' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <span className={`text-base ${!isSportsArea ? 'text-blue-100' : 'text-blue-400'}`}>◈</span>Casino
+          </Link>
+          <Link
+            href="/sports"
+            aria-current={isSportsArea ? 'page' : undefined}
+            className={`relative flex h-10 min-w-[132px] items-center justify-center gap-2 rounded-xl px-6 text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-200 ${isSportsArea ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg shadow-fuchsia-950/50 ring-1 ring-fuchsia-300/30' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <span className={`text-base ${isSportsArea ? 'text-fuchsia-100' : 'text-fuchsia-400'}`}>↗</span>Sports
+          </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* --- SIDEBAR --- */}
       <Sidebar />
 
       {/* --- CONTENT --- */}
-      <main className="pt-24 pb-10 flex-1 relative px-4 md:px-8 md:ml-56 transition-all duration-300">
+      <main className="pt-36 pb-10 flex-1 relative px-4 md:px-8 md:ml-56 transition-all duration-300">
          <div className="fixed top-20 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent pointer-events-none"></div>
          {children}
       </main>
