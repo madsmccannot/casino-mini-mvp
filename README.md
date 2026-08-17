@@ -64,3 +64,17 @@ npm run build
 ```
 
 The integration suite uses only explicit test balances and `InternalProvider`. See `docs/SECURITY_BASELINE.md`, `docs/EVM_WALLET_MIGRATION.md`, `docs/ledger.md`, `docs/bankroll-winr.md`, `docs/provably-fair.md` and the phase completion reports before making deployment decisions.
+
+### Local frontend access
+
+Start the frontend from `frontend/` with `npm run dev`; the repository script binds explicitly to IPv4 `127.0.0.1` to avoid the common `localhost`/IPv6 mismatch. Open `http://127.0.0.1:3000`. When running across a VM/WSL boundary, use `npm run dev -- --hostname 0.0.0.0` and keep the development terminal running; `0.0.0.0` is a bind address, not the browser URL.
+
+Before starting the backend locally, start MongoDB as well:
+
+```bash
+docker-compose -f docker-compose.ledger.yml up -d
+cd backend
+npm run dev
+```
+
+If the backend reports `ECONNREFUSED 127.0.0.1:27017`, MongoDB is not running or has not finished its replica-set health check yet.

@@ -19,7 +19,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!connected) return;
-    setLoading(true);
     Promise.all([accountClient.profile(), accountClient.bets(), accountClient.favorites(), accountClient.retention()])
       .then(([nextProfile, nextBets, nextFavorites, nextRetention]) => {
         setProfile(nextProfile); setName(nextProfile.displayName ?? ''); setBets(nextBets.bets ?? []); setFavorites(nextFavorites.favorites ?? []); setRetention(nextRetention);

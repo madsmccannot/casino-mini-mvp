@@ -1,164 +1,80 @@
 import type { NextPage } from 'next';
 import Link from 'next/link';
-import { useUIStore } from '../state/uiStore';
 import { useMemo } from 'react';
+import { useUIStore } from '../state/uiStore';
 import { useCasinoStore } from '../state/casinoStore';
 import { useEvmWallet } from '../hooks/useEvmWallet';
 import { EvmWallet } from '../components/WalletConnect/EvmWallet';
 
 const Home: NextPage = () => {
-  const { t, language } = useUIStore(); 
+  const { t, language } = useUIStore();
   const { balance, isAuthenticated } = useCasinoStore();
   const { connected } = useEvmWallet();
 
-  const gamesRow1 = useMemo(() => [
-    { 
-      id: 'coinflip', 
-      name: t('game_coinflip') || "COINFLIP", 
-      icon: '🪙', 
-      desc: "Double your USDC",
-      color: 'yellow',
-      gradient: 'from-yellow-900/40 to-black',
-      hoverGradient: 'group-hover:from-yellow-600 group-hover:to-yellow-900',
-      borderGlow: 'group-hover:shadow-yellow-500/50'
-    },
-    { 
-      id: 'dice', 
-      name: t('game_dice') || "DICE", 
-      icon: '🎲', 
-      desc: t('desc_dice') || "Roll and Win",
-      color: 'emerald',
-      gradient: 'from-emerald-900/40 to-black',
-      hoverGradient: 'group-hover:from-emerald-600 group-hover:to-emerald-900',
-      borderGlow: 'group-hover:shadow-emerald-500/50'
-    },
-    { 
-      id: 'roulette', 
-      name: t('game_roulette') || "ROULETTE", 
-      icon: '🎰', 
-      desc: t('desc_roulette') || "Spin the Wheel",
-      color: 'red',
-      gradient: 'from-red-900/40 to-black',
-      hoverGradient: 'group-hover:from-red-600 group-hover:to-red-900',
-      borderGlow: 'group-hover:shadow-red-500/50'
-    },
+  const games = useMemo(() => [
+    { id: 'coinflip', name: t('game_coinflip'), desc: t('desc_coinflip'), icon: '🪙', tone: 'amber', accent: 'bg-amber-400' },
+    { id: 'dice', name: t('game_dice'), desc: t('desc_dice'), icon: '🎲', tone: 'emerald', accent: 'bg-emerald-400' },
+    { id: 'roulette', name: t('game_roulette'), desc: t('desc_roulette'), icon: '🎰', tone: 'rose', accent: 'bg-rose-400' },
+    { id: 'plinko', name: t('game_plinko'), desc: t('desc_plinko'), icon: '🎯', tone: 'pink', accent: 'bg-pink-400' },
+    { id: 'mines', name: t('game_mines'), desc: t('desc_mines'), icon: '💣', tone: 'blue', accent: 'bg-blue-400' },
+    { id: 'crash', name: t('game_crash'), desc: t('desc_crash'), icon: '🚀', tone: 'violet', accent: 'bg-violet-400' },
+    { id: 'limbo', name: t('game_limbo'), desc: t('desc_limbo'), icon: '♾️', tone: 'cyan', accent: 'bg-cyan-400' },
+    { id: 'blackjack', name: t('game_blackjack'), desc: t('desc_blackjack'), icon: '🂡', tone: 'emerald', accent: 'bg-emerald-400' },
   ], [language, t]);
-
-  const gamesRow2 = useMemo(() => [
-    { 
-      id: 'plinko', 
-      name: t('game_plinko') || "PLINKO", 
-      icon: '🎯', 
-      desc: t('desc_plinko') || "Drop & Multiply",
-      color: 'pink',
-      gradient: 'from-pink-900/40 to-black',
-      hoverGradient: 'group-hover:from-pink-600 group-hover:to-pink-900',
-      borderGlow: 'group-hover:shadow-pink-500/50'
-    },
-    { 
-      id: 'mines', 
-      name: t('game_mines') || "MINES", 
-      icon: '💣', 
-      desc: t('desc_mines') || "Don't Explode",
-      color: 'blue',
-      gradient: 'from-blue-900/40 to-black',
-      hoverGradient: 'group-hover:from-blue-600 group-hover:to-blue-900',
-      borderGlow: 'group-hover:shadow-blue-500/50'
-    },
-  ], [language, t]);
-
-  const gamesRow3 = useMemo(() => [
-    { id: 'crash', name: 'CRASH', icon: '🚀', desc: 'Ride the multiplier', color: 'purple', gradient: 'from-purple-900/40 to-black', hoverGradient: 'group-hover:from-purple-600 group-hover:to-purple-900', borderGlow: 'group-hover:shadow-purple-500/50' },
-    { id: 'limbo', name: 'LIMBO', icon: '♾️', desc: 'Set your target', color: 'cyan', gradient: 'from-cyan-900/40 to-black', hoverGradient: 'group-hover:from-cyan-600 group-hover:to-cyan-900', borderGlow: 'group-hover:shadow-cyan-500/50' },
-    { id: 'blackjack', name: 'BLACKJACK', icon: '🂡', desc: 'Beat the dealer', color: 'emerald', gradient: 'from-emerald-900/40 to-black', hoverGradient: 'group-hover:from-emerald-600 group-hover:to-emerald-900', borderGlow: 'group-hover:shadow-emerald-500/50' }
-  ], []);
-
-  const HexagonCard = ({ game }: { game: any }) => (
-    <Link href={`/${game.id}`} className="group relative block mx-1 z-0 hover:z-20 transition-all duration-300">
-      <div 
-        className={`absolute inset-0 bg-${game.color}-600 opacity-0 group-hover:opacity-40 blur-2xl transition-opacity duration-300 -z-10`}
-        style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}
-      />
-      <div 
-        className={`w-[200px] h-[230px] md:w-[240px] md:h-[277px] relative transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-2 filter drop-shadow-xl ${game.borderGlow}`}
-        style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-500 via-gray-700 to-black p-[2px]">
-          <div className={`w-full h-full bg-[#0c0f17] bg-gradient-to-b ${game.gradient} ${game.hoverGradient} flex flex-col items-center justify-center relative overflow-hidden text-center px-2 transition-all duration-500`}>
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <div className="text-5xl md:text-6xl mb-2 transform group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-              {game.icon}
-            </div>
-            <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider mb-1 drop-shadow-md z-10">
-              {game.name}
-            </h3>
-            <p className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-[0.1em] opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 absolute bottom-12 z-10">
-              {game.desc}
-            </p>
-            <div className={`absolute bottom-6 w-8 h-1 bg-white/20 rounded-full group-hover:bg-white transition-colors shadow-[0_0_10px_currentColor]`} />
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[85vh] px-4 overflow-hidden relative">
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-[128px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[128px] pointer-events-none" />
+    <div className="relative overflow-hidden pb-16">
+      <div className="pointer-events-none absolute -top-40 left-1/3 h-[520px] w-[520px] rounded-full bg-blue-600/10 blur-[130px]" />
+      <div className="pointer-events-none absolute top-[560px] right-0 h-[420px] w-[420px] rounded-full bg-fuchsia-600/10 blur-[130px]" />
 
-      <div className="text-center mb-8 animate-fade-in max-w-3xl mx-auto z-10">
-        <div className="flex justify-center gap-3 mb-5"><Link href="/sports" className="px-5 py-2 rounded-full bg-blue-600/20 border border-blue-500/40 text-blue-300 text-sm font-bold">OPEN SPORTSBOOK →</Link><Link href="/casino" className="px-5 py-2 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/40 text-fuchsia-300 text-sm font-bold">OPEN CASINO →</Link></div>
-        <h2 className="text-sm font-bold tracking-[0.3em] text-blue-400 mb-4 uppercase drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]">
-          {t('hero_pre')}
-        </h2>
-        
-        <h1 className="text-7xl md:text-9xl font-black mb-6 tracking-tighter leading-none drop-shadow-2xl">
-          <span className="block bg-gradient-to-b from-white via-gray-300 to-gray-500 bg-clip-text text-transparent drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
-            {t('hero_line1')}
-          </span>
-          <span className="block text-[#4169E1] drop-shadow-[0_0_35px_rgba(65,105,225,0.6)]">
-            {t('hero_line2')}
-          </span>
-        </h1>
-
-        <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">Play in dollars. Your wallet, network and settlement rails stay behind the scenes.</p>
-
-        <div className="mt-8 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-[#111827]/90 p-4 md:p-5 text-left shadow-2xl shadow-blue-950/30">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-blue-300 font-bold">Your account</p>
-              <p className="mt-1 text-2xl font-black text-white">${balance.toFixed(2)} <span className="text-sm font-bold text-gray-400">USDC</span></p>
-              <p className="text-xs text-gray-500 mt-1">{isAuthenticated ? 'Ready to play' : connected ? 'Confirm the wallet signature to continue' : 'Connect once, then deposit and play'}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <EvmWallet />
-              {isAuthenticated ? (
-                <button type="button" onClick={() => window.dispatchEvent(new Event('casino:open-deposit'))} className="px-4 py-2 rounded-lg text-sm font-bold border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25">Deposit</button>
-              ) : (
-                <button type="button" disabled className="px-4 py-2 rounded-lg text-sm font-bold border border-white/10 bg-white/5 text-gray-500 cursor-not-allowed">Deposit</button>
-              )}
-            </div>
+      <section className="mx-auto grid max-w-7xl min-w-0 items-start gap-8 px-4 pt-4 md:px-8 md:pt-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] lg:gap-10">
+        <div className="relative z-10">
+          <div className="mb-6 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.18em]">
+            <span className="rounded-full border border-blue-400/30 bg-blue-500/10 px-3 py-1.5 text-blue-300">{t('hero_pre')}</span>
+            <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-emerald-300">{t('home_fair_badge')}</span>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[10px] uppercase tracking-wider font-bold">
-            <div className="rounded-lg bg-white/5 px-2 py-2 text-blue-200">01 Connect</div>
-            <div className="rounded-lg bg-white/5 px-2 py-2 text-gray-400">02 Deposit</div>
-            <div className="rounded-lg bg-white/5 px-2 py-2 text-gray-400">03 Play</div>
+          <h1 data-no-translate className="max-w-full break-words text-6xl font-black leading-[0.9] tracking-[-0.07em] text-white sm:text-8xl lg:text-[6.2rem] xl:text-[7.5rem]">
+            <span className="block bg-gradient-to-b from-white via-slate-200 to-slate-500 bg-clip-text text-transparent">{t('hero_line1')}</span>
+            <span className="block bg-gradient-to-r from-blue-400 via-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">{t('hero_line2')}</span>
+          </h1>
+          <p className="mt-7 max-w-xl text-lg leading-8 text-slate-400">{t('hero_description')}</p>
+          <div className="mt-8 inline-flex rounded-2xl border border-white/10 bg-slate-950/70 p-1.5 shadow-xl shadow-blue-950/20" role="tablist" aria-label="Product areas">
+            <Link href="/casino" role="tab" className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100"><span className="text-base">◈</span>{t('home_open_casino')}</Link>
+            <Link href="/sports" role="tab" className="group inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold text-slate-300 transition hover:bg-blue-600/20 hover:text-white"><span className="text-base">↗</span>{t('home_open_sports')}</Link>
+          </div>
+          <div className="mt-10 grid max-w-xl grid-cols-3 gap-5 border-t border-white/10 pt-5 text-xs text-slate-500">
+            <div><strong className="block text-lg text-white">8</strong>{t('home_originals')}</div>
+            <div><strong className="block text-lg text-white">USDC</strong>{t('home_currency')}</div>
+            <div><strong className="block text-lg text-white">24/7</strong>{t('home_play_anytime')}</div>
           </div>
         </div>
-      </div>
 
-      <div className="relative flex flex-col items-center justify-center z-10 pb-20 scale-90 md:scale-100">
-        <div className="flex justify-center items-center">
-          {gamesRow1.map(game => <HexagonCard key={game.id} game={game} />)}
+        <div className="relative z-10 w-full max-w-xl min-w-0 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-2xl shadow-blue-950/30 backdrop-blur-xl sm:p-7 lg:justify-self-end">
+          <div className="flex items-start justify-between gap-4">
+            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">{t('home_account')}</p><h2 className="mt-2 text-2xl font-black text-white">{t('home_ready')}</h2></div>
+            <Link href="/account" className="rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-white/25 hover:text-white">{t('home_account_link')}</Link>
+          </div>
+          <div className="mt-7 rounded-2xl border border-white/10 bg-black/20 p-5">
+            <p className="text-xs uppercase tracking-widest text-slate-500">{t('bankroll_label')}</p>
+            <p className="mt-2 text-4xl font-black text-white">${balance.toFixed(2)} <span className="text-sm font-bold text-slate-500">USDC</span></p>
+            <p className="mt-2 text-sm text-slate-400">{isAuthenticated ? t('home_authenticated') : connected ? t('home_sign_to_continue') : t('home_connect_to_start')}</p>
+          </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <div className="min-w-0 flex-1"><EvmWallet /></div>
+            <button type="button" disabled={!isAuthenticated} onClick={() => window.dispatchEvent(new Event('casino:open-deposit'))} className="min-h-12 rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-5 text-sm font-extrabold text-emerald-200 transition hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-600">{t('btn_deposit')}</button>
+          </div>
+          <div className="mt-6 grid grid-cols-3 gap-2 text-center text-[10px] font-bold uppercase tracking-wider"><span className="rounded-lg bg-blue-500/15 px-2 py-2 text-blue-200">01 {t('home_step_connect')}</span><span className="rounded-lg bg-white/5 px-2 py-2 text-slate-500">02 {t('home_step_deposit')}</span><span className="rounded-lg bg-white/5 px-2 py-2 text-slate-500">03 {t('home_step_play')}</span></div>
         </div>
-        <div className="flex justify-center items-center -mt-[50px] md:-mt-[55px]">
-          {gamesRow2.map(game => <HexagonCard key={game.id} game={game} />)}
+      </section>
+
+      <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
+        <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-300">{t('home_games_kicker')}</p><h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">{t('home_games_title')}</h2></div><Link href="/casino" className="text-sm font-bold text-blue-300 hover:text-white">{t('home_view_all')} →</Link></div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {games.map((game) => <Link key={game.id} href={`/${game.id}`} className="group relative min-h-[190px] overflow-hidden rounded-2xl border border-white/10 bg-slate-900/75 p-5 transition duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-slate-800/90 hover:shadow-xl hover:shadow-blue-950/20"><div className={`absolute -right-6 -top-6 h-28 w-28 rounded-full ${game.accent}/10 blur-2xl transition group-hover:scale-150`} /><div className="relative flex h-full flex-col justify-between"><div className="flex items-start justify-between"><span data-no-translate className="text-4xl transition duration-300 group-hover:scale-110">{game.icon}</span><span data-no-translate className="text-xs text-slate-600 transition group-hover:text-slate-300">↗</span></div><div><h3 data-no-translate className="text-lg font-black tracking-wide text-white">{game.name}</h3><p className="mt-1 text-xs text-slate-500 group-hover:text-slate-400">{game.desc}</p></div></div></Link>)}
         </div>
-        <div className="flex justify-center items-center -mt-[50px] md:-mt-[55px]">
-          {gamesRow3.map(game => <HexagonCard key={game.id} game={game} />)}
-        </div>
-      </div>
+      </section>
+
+      <section className="mx-auto mt-16 max-w-7xl px-4 md:px-8"><div className="grid gap-4 md:grid-cols-3"><Link href="/sports" className="group rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-950/80 to-slate-900 p-6 transition hover:border-blue-300/40"><p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">{t('home_sports_label')}</p><h3 className="mt-3 text-2xl font-black text-white">{t('home_sports_title')}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{t('home_sports_description')}</p><span className="mt-5 block text-sm font-bold text-blue-300 group-hover:text-white">{t('home_browse_markets')} →</span></Link><div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6"><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{t('home_fairness_kicker')}</p><h3 className="mt-3 text-2xl font-black text-white">{t('home_fairness_title')}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{t('home_fairness_description')}</p></div><Link href="/account" className="group rounded-2xl border border-white/10 bg-slate-900/60 p-6 transition hover:border-white/25"><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300">{t('home_account_label')}</p><h3 className="mt-3 text-2xl font-black text-white">{t('home_account_title')}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{t('home_account_description')}</p><span className="mt-5 block text-sm font-bold text-fuchsia-300 group-hover:text-white">{t('home_open_account')} →</span></Link></div></section>
     </div>
   );
 };

@@ -29,7 +29,7 @@ export const getAllowedOrigins = (): string[] => {
 
   if (configured?.length) return configured;
   if (isProduction) return required('CORS_ALLOWED_ORIGINS').split(',').map((origin) => origin.trim());
-  return ['http://localhost:3000'];
+  return ['http://localhost:3000', 'http://127.0.0.1:3000'];
 };
 
 export const getCustodyMode = (): 'disabled' => {

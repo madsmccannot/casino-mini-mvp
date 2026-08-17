@@ -15,10 +15,16 @@ const translations = {
     hero_pre: "THE FUTURE OF", 
     hero_line1: "CRYPTO", 
     hero_line2: "GAMING",
-    hero_subtitle: "Instant payouts, fair gameplay, and 1% house edge. Join the revolution on Solana.",
+    hero_subtitle: "Instant payouts, fair gameplay, and a transparent house edge. Your wallet and network stay behind the scenes.",
+    hero_description: "Play Originals, follow live sports markets and keep one simple USDC balance. Connect once and let the platform handle the complexity.",
+    home_open_sports: "OPEN SPORTSBOOK", home_open_casino: "EXPLORE CASINO", home_originals: "Original games", home_currency: "Accounting unit", home_play_anytime: "Play anytime",
+    home_account: "YOUR ACCOUNT", home_ready: "Ready when you are", home_account_link: "Account", home_authenticated: "Your account is ready to play.", home_sign_to_continue: "Sign the message in your wallet to continue.", home_connect_to_start: "Connect once, then deposit and play.",
+    home_step_connect: "Connect", home_step_deposit: "Deposit", home_step_play: "Play", home_games_kicker: "CASINO ORIGINALS", home_games_title: "Pick your game", home_view_all: "View all games",
+    home_sports_title: "Markets move. Be ready.", home_sports_description: "Explore the Sportsbook foundation with live-ready markets, singles and accumulators.", home_browse_markets: "Browse markets", home_fairness_kicker: "VERIFIABLE PLAY", home_fairness_title: "Fair by design", home_fairness_description: "Every completed game carries a server-side fairness proof that can be independently replayed.", home_account_kicker: "PLAYER HUB", home_account_title: "Your history, your preferences", home_account_description: "Manage your profile, favourites and bet history from one secure account.", home_open_account: "Open account",
+    game_crash: "CRASH", desc_crash: "Ride the multiplier", game_limbo: "LIMBO", desc_limbo: "Set your target", game_blackjack: "BLACKJACK", desc_blackjack: "Beat the dealer", home_fair_badge: "Provably fair", home_sports_label: "Sportsbook", home_account_label: "PLAYER HUB",
     
     // --- GAME TITLES & DESC ---
-    game_coinflip: "COINFLIP", desc_coinflip: "Double your SOL instantly",
+    game_coinflip: "COINFLIP", desc_coinflip: "Double your USDC instantly",
     game_dice: "DICE", desc_dice: "Roll & Win Big",
     game_roulette: "ROULETTE", desc_roulette: "Spin the Wheel",
     game_plinko: "PLINKO", desc_plinko: "Drop & Multiply",
@@ -29,9 +35,9 @@ const translations = {
     win: "YOU WON", lose: "YOU LOST",
     btn_cashout: "CASHOUT", btn_play: "PLAY",
     how_to_play: "HOW TO PLAY",
-    bankroll_label: "BANKROLL",
+    bankroll_label: "BANKROLL", balance_label: "BALANCE",
     
-    lbl_sol_mode: "SOL MODE", lbl_usd_mode: "USD MODE",
+    lbl_sol_mode: "USDC MODE", lbl_usd_mode: "USD MODE",
     lbl_bet_amount: "BET AMOUNT", lbl_profit: "PROFIT",
     btn_deposit: "DEPOSIT", btn_withdraw: "WITHDRAW",
     
@@ -42,13 +48,13 @@ const translations = {
     msg_auth_loading: "Verifying wallet...",
 
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "DEPOSIT SOL",
-    modal_withdraw_title: "WITHDRAW SOL",
-    modal_amount_sol: "AMOUNT (SOL)",
+    modal_deposit_title: "DEPOSIT USDC",
+    modal_withdraw_title: "WITHDRAW USDC",
+    modal_amount_sol: "AMOUNT (USDC)",
     lbl_available: "Available",
     lbl_target_address: "TARGET ADDRESS",
-    modal_devnet_warning: "WARNING: You are on Solana Devnet. Use test SOL only.",
-    msg_tx_confirm: "Transaction confirmed on Solana network.",
+    modal_devnet_warning: "Deposits are currently in preparation. Use test balances only.",
+    msg_tx_confirm: "Transaction confirmed.",
     msg_dep_success: "Deposit successful!",
     msg_wit_success: "Withdrawal processing...",
     msg_wit_low_balance: "Insufficient in-game balance for withdrawal.",
@@ -88,9 +94,14 @@ const translations = {
   // --- PORTUGUÊS ---
   pt: {
     hero_pre: "O FUTURO DO", hero_line1: "CRYPTO", hero_line2: "GAMING",
-    hero_subtitle: "Pagamentos instantâneos, jogo justo e 1% de vantagem da casa.",
+    hero_subtitle: "Pagamentos rápidos, jogo justo e uma vantagem da casa transparente.",
+    hero_description: "Joga Originals, acompanha mercados desportivos e mantém um saldo USDC simples. Liga-te uma vez e deixa a plataforma tratar da complexidade.",
+    home_open_sports: "ABRIR SPORTSBOOK", home_open_casino: "EXPLORAR CASINO", home_originals: "Jogos originais", home_currency: "Unidade de conta", home_play_anytime: "Joga quando quiseres",
+    home_account: "A TUA CONTA", home_ready: "Pronto quando estiveres", home_account_link: "Conta", home_authenticated: "A tua conta está pronta para jogar.", home_sign_to_continue: "Assina a mensagem na carteira para continuar.", home_connect_to_start: "Liga-te uma vez, deposita e joga.",
+    home_step_connect: "Ligar", home_step_deposit: "Depositar", home_step_play: "Jogar", home_games_kicker: "ORIGINALS DO CASINO", home_games_title: "Escolhe o teu jogo", home_view_all: "Ver todos",
+    home_sports_title: "Os mercados mexem. Está pronto.", home_sports_description: "Explora o Sportsbook com mercados preparados para live, apostas simples e acumuladores.", home_browse_markets: "Ver mercados", home_fairness_kicker: "JOGO VERIFICÁVEL", home_fairness_title: "Justo por design", home_fairness_description: "Cada jogo concluído inclui uma prova de fairness do servidor que pode ser verificada de forma independente.", home_account_kicker: "ÁREA DE JOGADOR", home_account_title: "O teu histórico, as tuas preferências", home_account_description: "Gere o perfil, favoritos e histórico de apostas numa conta segura.", home_open_account: "Abrir conta",
     
-    game_coinflip: "MOEDA", desc_coinflip: "Duplica o teu SOL",
+    game_coinflip: "MOEDA", desc_coinflip: "Duplica o teu USDC",
     game_dice: "DADOS", desc_dice: "Roda e Ganha",
     game_roulette: "ROLETA", desc_roulette: "Gira a Roda",
     game_plinko: "PLINKO", desc_plinko: "Larga e Multiplica",
@@ -98,9 +109,9 @@ const translations = {
 
     modal_low_balance: "Saldo Insuficiente", win: "GANHASTE", lose: "PERDESTE",
     btn_cashout: "LEVANTAR", btn_play: "JOGAR", how_to_play: "COMO JOGAR",
-    bankroll_label: "BANCA",
+    bankroll_label: "BANCA", balance_label: "SALDO",
 
-    lbl_sol_mode: "MODO SOL", lbl_usd_mode: "MODO USD", lbl_bet_amount: "APOSTA", lbl_profit: "LUCRO",
+    lbl_sol_mode: "MODO USDC", lbl_usd_mode: "MODO USD", lbl_bet_amount: "APOSTA", lbl_profit: "LUCRO",
     btn_deposit: "DEPOSITAR", btn_withdraw: "LEVANTAR",
     
     // --- AUTH NOVOS ---
@@ -110,13 +121,13 @@ const translations = {
     msg_auth_loading: "A verificar carteira...",
     
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "DEPOSITAR SOL",
-    modal_withdraw_title: "LEVANTAR SOL",
-    modal_amount_sol: "QUANTIDADE (SOL)",
+    modal_deposit_title: "DEPOSITAR USDC",
+    modal_withdraw_title: "LEVANTAR USDC",
+    modal_amount_sol: "QUANTIDADE (USDC)",
     lbl_available: "Disponível",
     lbl_target_address: "ENDEREÇO DE DESTINO",
-    modal_devnet_warning: "AVISO: Está na Solana Devnet. Use SOL de teste apenas.",
-    msg_tx_confirm: "Transação confirmada na rede Solana.",
+    modal_devnet_warning: "Os depósitos estão a ser preparados. Use apenas saldos de teste.",
+    msg_tx_confirm: "Transação confirmada.",
     msg_dep_success: "Depósito bem-sucedido!",
     msg_wit_success: "Processando levantamento...",
     msg_wit_low_balance: "Saldo em jogo insuficiente para levantamento.",
@@ -148,7 +159,7 @@ const translations = {
     hero_pre: "EL FUTURO DEL", hero_line1: "CRYPTO", hero_line2: "GAMING",
     hero_subtitle: "Pagos instantáneos, juego justo y 1% de ventaja de la casa.",
 
-    game_coinflip: "MONEDA", desc_coinflip: "Duplica tu SOL",
+    game_coinflip: "MONEDA", desc_coinflip: "Duplica tu USDC",
     game_dice: "DADOS", desc_dice: "Tira y Gana",
     game_roulette: "RULETA", desc_roulette: "Gira la Rueda",
     game_plinko: "PLINKO", desc_plinko: "Deja Caer y Gana",
@@ -158,7 +169,7 @@ const translations = {
     btn_cashout: "RETIRAR", btn_play: "JUGAR", how_to_play: "CÓMO JUGAR",
     bankroll_label: "BANCA",
 
-    lbl_sol_mode: "MODO SOL", lbl_usd_mode: "MODO USD", lbl_bet_amount: "APUESTA", lbl_profit: "GANANCIA",
+    lbl_sol_mode: "MODO USDC", lbl_usd_mode: "MODO USD", lbl_bet_amount: "APUESTA", lbl_profit: "GANANCIA",
     btn_deposit: "DEPOSITAR", btn_withdraw: "RETIRAR",
     
     // Fallback para Auth (usará EN se não traduzido, mas aqui deixo placeholder ou EN)
@@ -168,13 +179,13 @@ const translations = {
     msg_auth_loading: "Verifying wallet...",
     
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "DEPOSITAR SOL",
-    modal_withdraw_title: "RETIRAR SOL",
-    modal_amount_sol: "CANTIDAD (SOL)",
+    modal_deposit_title: "DEPOSITAR USDC",
+    modal_withdraw_title: "RETIRAR USDC",
+    modal_amount_sol: "CANTIDAD (USDC)",
     lbl_available: "Disponible",
     lbl_target_address: "DIRECCIÓN DE DESTINO",
-    modal_devnet_warning: "ADVERTENCIA: Estás en Solana Devnet. Usa SOL de prueba.",
-    msg_tx_confirm: "Transacción confirmada en la red Solana.",
+    modal_devnet_warning: "Los depósitos están en preparación. Usa solo saldos de prueba.",
+    msg_tx_confirm: "Transacción confirmada.",
     msg_dep_success: "Depósito exitoso!",
     msg_wit_success: "Procesando retiro...",
     msg_wit_low_balance: "Saldo insuficiente para retiro.",
@@ -206,7 +217,7 @@ const translations = {
     hero_pre: "LE FUTUR DU", hero_line1: "CRYPTO", hero_line2: "GAMING",
     hero_subtitle: "Paiements instantanés, jeu équitable et avantage de 1%.",
 
-    game_coinflip: "PIÈCE", desc_coinflip: "Doublez votre SOL",
+    game_coinflip: "PIÈCE", desc_coinflip: "Doublez votre USDC",
     game_dice: "DÉS", desc_dice: "Lancez et Gagnez",
     game_roulette: "ROULETTE", desc_roulette: "Faites Tourner",
     game_plinko: "PLINKO", desc_plinko: "Lâchez et Multipliez",
@@ -216,17 +227,17 @@ const translations = {
     btn_cashout: "ENCAISSER", btn_play: "JOUER", how_to_play: "COMMENT JOUER",
     bankroll_label: "SOLDE",
 
-    lbl_sol_mode: "MODE SOL", lbl_usd_mode: "MODE USD", lbl_bet_amount: "MISE", lbl_profit: "PROFIT",
+    lbl_sol_mode: "MODE USDC", lbl_usd_mode: "MODE USD", lbl_bet_amount: "MISE", lbl_profit: "PROFIT",
     btn_deposit: "DÉPOSER", btn_withdraw: "RETIRER",
 
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "DÉPOSER SOL",
-    modal_withdraw_title: "RETIRER SOL",
-    modal_amount_sol: "MONTANT (SOL)",
+    modal_deposit_title: "DÉPOSER USDC",
+    modal_withdraw_title: "RETIRER USDC",
+    modal_amount_sol: "MONTANT (USDC)",
     lbl_available: "Disponible",
     lbl_target_address: "ADRESSE CIBLE",
-    modal_devnet_warning: "AVERTISSEMENT: Vous êtes sur Solana Devnet. Utilisez SOL de test.",
-    msg_tx_confirm: "Transaction confirmée sur le réseau Solana.",
+    modal_devnet_warning: "Les dépôts sont en préparation. Utilisez uniquement des soldes de test.",
+    msg_tx_confirm: "Transaction confirmée.",
     msg_dep_success: "Dépôt réussi!",
     msg_wit_success: "Retrait en cours...",
     msg_wit_low_balance: "Solde en jeu insuffisant pour le retrait.",
@@ -258,7 +269,7 @@ const translations = {
     hero_pre: "DIE ZUKUNFT DES", hero_line1: "CRYPTO", hero_line2: "GAMING",
     hero_subtitle: "Sofortige Auszahlungen, faires Spiel und 1% Hausvorteil.",
 
-    game_coinflip: "MÜNZE", desc_coinflip: "Verdoppeln Sie Ihr SOL",
+    game_coinflip: "MÜNZE", desc_coinflip: "Verdoppeln Sie Ihr USDC",
     game_dice: "WÜRFEL", desc_dice: "Rollen & Gewinnen",
     game_roulette: "ROULETTE", desc_roulette: "Drehen Sie das Rad",
     game_plinko: "PLINKO", desc_plinko: "Fallenlassen & Multiplizieren",
@@ -268,17 +279,17 @@ const translations = {
     btn_cashout: "AUSZAHLEN", btn_play: "SPIELEN", how_to_play: "SPIELANLEITUNG",
     bankroll_label: "GUTHABEN",
 
-    lbl_sol_mode: "SOL MODUS", lbl_usd_mode: "USD MODUS", lbl_bet_amount: "EINSATZ", lbl_profit: "GEWINN",
+    lbl_sol_mode: "USDC MODUS", lbl_usd_mode: "USD MODUS", lbl_bet_amount: "EINSATZ", lbl_profit: "GEWINN",
     btn_deposit: "EINZAHLEN", btn_withdraw: "ABHEBEN",
 
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "SOL EINZAHLEN",
-    modal_withdraw_title: "SOL ABHEBEN",
-    modal_amount_sol: "BETRAG (SOL)",
+    modal_deposit_title: "USDC EINZAHLEN",
+    modal_withdraw_title: "USDC ABHEBEN",
+    modal_amount_sol: "BETRAG (USDC)",
     lbl_available: "Verfügbar",
     lbl_target_address: "ZIELADRESSE",
-    modal_devnet_warning: "WARNUNG: Sie sind auf Solana Devnet. Nutzen Sie Test-SOL.",
-    msg_tx_confirm: "Transaktion im Solana-Netzwerk bestätigt.",
+    modal_devnet_warning: "Einzahlungen werden vorbereitet. Nutzen Sie nur Testguthaben.",
+    msg_tx_confirm: "Transaktion bestätigt.",
     msg_dep_success: "Einzahlung erfolgreich!",
     msg_wit_success: "Auszahlung wird verarbeitet...",
     msg_wit_low_balance: "Zu wenig In-Game-Guthaben für die Auszahlung.",
@@ -310,7 +321,7 @@ const translations = {
     hero_pre: "БУДУЩЕЕ", hero_line1: "КРИПТО", hero_line2: "ГЕЙМИНГА",
     hero_subtitle: "Мгновенные выплаты, честная игра и преимущество казино 1%.",
 
-    game_coinflip: "МОНЕТКА", desc_coinflip: "Удвойте свои SOL",
+    game_coinflip: "МОНЕТКА", desc_coinflip: "Удвойте свои USDC",
     game_dice: "КОСТИ", desc_dice: "Бросай и Выигрывай",
     game_roulette: "РУЛЕТКА", desc_roulette: "Крути Колесо",
     game_plinko: "ПЛИНКО", desc_plinko: "Бросай и Умножай",
@@ -320,17 +331,17 @@ const translations = {
     btn_cashout: "ЗАБРАТЬ", btn_play: "ИГРАТЬ", how_to_play: "КАК ИГРАТЬ",
     bankroll_label: "БАЛАНС",
 
-    lbl_sol_mode: "РЕЖИМ SOL", lbl_usd_mode: "РЕЖИМ USD", lbl_bet_amount: "СТАВКА", lbl_profit: "ПРИБЫЛЬ",
+    lbl_sol_mode: "РЕЖИМ USDC", lbl_usd_mode: "РЕЖИМ USD", lbl_bet_amount: "СТАВКА", lbl_profit: "ПРИБЫЛЬ",
     btn_deposit: "ДЕПОЗИТ", btn_withdraw: "ВЫВОД",
 
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "ДЕПОЗИТ SOL",
-    modal_withdraw_title: "ВЫВОД SOL",
-    modal_amount_sol: "СУММА (SOL)",
+    modal_deposit_title: "ДЕПОЗИТ USDC",
+    modal_withdraw_title: "ВЫВОД USDC",
+    modal_amount_sol: "СУММА (USDC)",
     lbl_available: "Доступно",
     lbl_target_address: "АДРЕС ПОЛУЧАТЕЛЯ",
-    modal_devnet_warning: "ПРЕДУПРЕЖДЕНИЕ: Вы используете Solana Devnet. Только тестовый SOL.",
-    msg_tx_confirm: "Транзакция подтверждена в сети Solana.",
+    modal_devnet_warning: "Депозиты готовятся. Используйте только тестовые балансы.",
+    msg_tx_confirm: "Транзакция подтверждена.",
     msg_dep_success: "Депозит успешен!",
     msg_wit_success: "Вывод средств в обработке...",
     msg_wit_low_balance: "Недостаточно средств в игре для вывода.",
@@ -362,7 +373,7 @@ const translations = {
     hero_pre: "未来的", hero_line1: "加密", hero_line2: "博彩",
     hero_subtitle: "即时支付，公平游戏，1% 赌场优势。",
 
-    game_coinflip: "抛硬币", desc_coinflip: "SOL翻倍",
+    game_coinflip: "抛硬币", desc_coinflip: "USDC翻倍",
     game_dice: "骰子", desc_dice: "掷骰赢大奖",
     game_roulette: "轮盘", desc_roulette: "旋转赢奖",
     game_plinko: "柏青哥", desc_plinko: "落下并倍增",
@@ -372,17 +383,17 @@ const translations = {
     btn_cashout: "提现", btn_play: "开始", how_to_play: "怎么玩",
     bankroll_label: "资金",
 
-    lbl_sol_mode: "SOL模式", lbl_usd_mode: "USD模式", lbl_bet_amount: "下注额", lbl_profit: "利润",
+    lbl_sol_mode: "USDC模式", lbl_usd_mode: "USD模式", lbl_bet_amount: "下注额", lbl_profit: "利润",
     btn_deposit: "充值", btn_withdraw: "提取",
 
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "充值 SOL",
-    modal_withdraw_title: "提取 SOL",
-    modal_amount_sol: "金额 (SOL)",
+    modal_deposit_title: "充值 USDC",
+    modal_withdraw_title: "提取 USDC",
+    modal_amount_sol: "金额 (USDC)",
     lbl_available: "可用",
     lbl_target_address: "目标地址",
-    modal_devnet_warning: "警告: 您在 Solana Devnet 上。仅使用测试 SOL。",
-    msg_tx_confirm: "Solana 网络交易已确认。",
+    modal_devnet_warning: "充值功能正在准备中。仅使用测试余额。",
+    msg_tx_confirm: "交易已确认。",
     msg_dep_success: "充值成功！",
     msg_wit_success: "正在处理提款...",
     msg_wit_low_balance: "游戏内余额不足，无法提款。",
@@ -414,7 +425,7 @@ const translations = {
     hero_pre: "भविष्य का", hero_line1: "क्रिप्टो", hero_line2: "गेमिंग",
     hero_subtitle: "तत्काल भुगतान, निष्पक्ष खेल और 1% हाउस एज।",
 
-    game_coinflip: "सिक्का उछालना", desc_coinflip: "अपना SOL दोगुना करें",
+    game_coinflip: "सिक्का उछालना", desc_coinflip: "अपना USDC दोगुना करें",
     game_dice: "पासा", desc_dice: "रोल करें और जीतें",
     game_roulette: "रूले", desc_roulette: "पहिया घुमाएं",
     game_plinko: "प्लिंको", desc_plinko: "गिराएं और गुणा करें",
@@ -424,17 +435,17 @@ const translations = {
     btn_cashout: "कैशआउट", btn_play: "खेलें", how_to_play: "कैसे खेलें",
     bankroll_label: "बैंकरोल",
 
-    lbl_sol_mode: "SOL मोड", lbl_usd_mode: "USD मोड", lbl_bet_amount: "शर्त राशि", lbl_profit: "लाभ",
+    lbl_sol_mode: "USDC मोड", lbl_usd_mode: "USD मोड", lbl_bet_amount: "शर्त राशि", lbl_profit: "लाभ",
     btn_deposit: "जमा करें", btn_withdraw: "निकालें",
 
     // --- MODAL & WALLET MESSAGES ---
-    modal_deposit_title: "SOL जमा करें",
-    modal_withdraw_title: "SOL निकालें",
-    modal_amount_sol: "राशि (SOL)",
+    modal_deposit_title: "USDC जमा करें",
+    modal_withdraw_title: "USDC निकालें",
+    modal_amount_sol: "राशि (USDC)",
     lbl_available: "उपलब्ध",
     lbl_target_address: "लक्ष्य पता",
-    modal_devnet_warning: "चेतावनी: आप Solana Devnet पर हैं। केवल टेस्ट SOL का उपयोग करें।",
-    msg_tx_confirm: "Solana नेटवर्क पर लेनदेन की पुष्टि हुई।",
+    modal_devnet_warning: "जमा सुविधा तैयार की जा रही है। केवल टेस्ट बैलेंस का उपयोग करें।",
+    msg_tx_confirm: "लेनदेन की पुष्टि हुई।",
     msg_dep_success: "जमा सफल!",
     msg_wit_success: "निकासी प्रक्रिया में है...",
     msg_wit_low_balance: "निकासी के लिए अपर्याप्त इन-गेम बैलेंस।",
@@ -462,13 +473,25 @@ const translations = {
   }
 };
 
+// Static translations for homepage copy introduced after the original locale tables.
+// Keeping these local makes language changes instant and deterministic in production.
+const homeTranslations: Record<Language, Record<string, string>> = {
+  en: {}, pt: {},
+  es: { hero_description: 'Juega Originals, sigue mercados deportivos y mantén un saldo USDC sencillo.', home_open_sports: 'ABRIR SPORTSBOOK', home_open_casino: 'EXPLORAR CASINO', home_originals: 'Juegos originales', home_currency: 'Unidad contable', home_play_anytime: 'Juega cuando quieras', home_account: 'TU CUENTA', home_ready: 'Listo cuando tú quieras', home_account_link: 'Cuenta', home_authenticated: 'Tu cuenta está lista para jugar.', home_sign_to_continue: 'Firma el mensaje en tu wallet para continuar.', home_connect_to_start: 'Conéctate una vez, deposita y juega.', home_step_connect: 'Conectar', home_step_deposit: 'Depositar', home_step_play: 'Jugar', home_games_kicker: 'ORIGINALS DEL CASINO', home_games_title: 'Elige tu juego', home_view_all: 'Ver todos', home_sports_title: 'Los mercados se mueven. Prepárate.', home_sports_description: 'Explora mercados deportivos, apuestas simples y combinadas.', home_browse_markets: 'Ver mercados', home_fairness_kicker: 'JUEGO VERIFICABLE', home_fairness_title: 'Justo por diseño', home_fairness_description: 'Cada juego incluye una prueba de fairness verificable.', home_account_kicker: 'ÁREA DEL JUGADOR', home_account_title: 'Tu historial y preferencias', home_account_description: 'Gestiona tu perfil, favoritos e historial en una cuenta segura.', home_open_account: 'Abrir cuenta', game_crash: 'CRASH', desc_crash: 'Monta el multiplicador', game_limbo: 'LIMBO', desc_limbo: 'Define tu objetivo', game_blackjack: 'BLACKJACK', desc_blackjack: 'Vence al crupier', home_fair_badge: 'Juego justo', home_sports_label: 'Sportsbook', home_account_label: 'ÁREA DEL JUGADOR' },
+  fr: { hero_description: 'Jouez aux Originals, suivez les marchés sportifs et gardez un solde USDC simple.', home_open_sports: 'OUVRIR LE SPORTSBOOK', home_open_casino: 'EXPLORER LE CASINO', home_originals: 'Jeux originaux', home_currency: 'Unité comptable', home_play_anytime: 'Jouez à tout moment', home_account: 'VOTRE COMPTE', home_ready: 'Prêt quand vous l’êtes', home_account_link: 'Compte', home_authenticated: 'Votre compte est prêt à jouer.', home_sign_to_continue: 'Signez le message dans votre wallet pour continuer.', home_connect_to_start: 'Connectez-vous, déposez et jouez.', home_step_connect: 'Connexion', home_step_deposit: 'Dépôt', home_step_play: 'Jouer', home_games_kicker: 'ORIGINALS DU CASINO', home_games_title: 'Choisissez votre jeu', home_view_all: 'Voir tous les jeux', home_sports_title: 'Les marchés bougent. Soyez prêt.', home_sports_description: 'Explorez les marchés sportifs, paris simples et combinés.', home_browse_markets: 'Voir les marchés', home_fairness_kicker: 'JEU VÉRIFIABLE', home_fairness_title: 'Équitable par conception', home_fairness_description: 'Chaque jeu fournit une preuve de fairness vérifiable.', home_account_kicker: 'ESPACE JOUEUR', home_account_title: 'Votre historique et vos préférences', home_account_description: 'Gérez votre profil, vos favoris et votre historique.', home_open_account: 'Ouvrir le compte', game_crash: 'CRASH', desc_crash: 'Suivez le multiplicateur', game_limbo: 'LIMBO', desc_limbo: 'Définissez votre objectif', game_blackjack: 'BLACKJACK', desc_blackjack: 'Battez le croupier', home_fair_badge: 'Jeu équitable', home_sports_label: 'Sportsbook', home_account_label: 'ESPACE JOUEUR' },
+  de: { hero_description: 'Spiele Originals, verfolge Sportmärkte und behalte ein einfaches USDC-Guthaben.', home_open_sports: 'SPORTSBOOK ÖFFNEN', home_open_casino: 'CASINO ENTDECKEN', home_originals: 'Originalspiele', home_currency: 'Kontoeinheit', home_play_anytime: 'Jederzeit spielen', home_account: 'DEIN KONTO', home_ready: 'Bereit, wenn du es bist', home_account_link: 'Konto', home_authenticated: 'Dein Konto ist spielbereit.', home_sign_to_continue: 'Signiere die Nachricht in deiner Wallet.', home_connect_to_start: 'Verbinden, einzahlen und spielen.', home_step_connect: 'Verbinden', home_step_deposit: 'Einzahlen', home_step_play: 'Spielen', home_games_kicker: 'CASINO ORIGINALS', home_games_title: 'Wähle dein Spiel', home_view_all: 'Alle Spiele', home_sports_title: 'Märkte bewegen sich. Sei bereit.', home_sports_description: 'Entdecke Sportmärkte, Einzelwetten und Kombis.', home_browse_markets: 'Märkte ansehen', home_fairness_kicker: 'NACHWEISLICH FAIR', home_fairness_title: 'Fair entwickelt', home_fairness_description: 'Jedes Spiel enthält einen überprüfbaren Fairness-Nachweis.', home_account_kicker: 'SPIELERBEREICH', home_account_title: 'Verlauf und Einstellungen', home_account_description: 'Verwalte Profil, Favoriten und Wetthistorie.', home_open_account: 'Konto öffnen', game_crash: 'CRASH', desc_crash: 'Folge dem Multiplikator', game_limbo: 'LIMBO', desc_limbo: 'Setze dein Ziel', game_blackjack: 'BLACKJACK', desc_blackjack: 'Schlage den Dealer', home_fair_badge: 'Nachweislich fair', home_sports_label: 'Sportsbook', home_account_label: 'SPIELERBEREICH' },
+  ru: { hero_description: 'Играйте в Originals, следите за спортивными рынками и используйте простой баланс USDC.', home_open_sports: 'ОТКРЫТЬ SPORTSBOOK', home_open_casino: 'ОТКРЫТЬ КАЗИНО', home_originals: 'Оригинальные игры', home_currency: 'Единица расчёта', home_play_anytime: 'Играйте в любое время', home_account: 'ВАШ СЧЁТ', home_ready: 'Всё готово', home_account_link: 'Счёт', home_authenticated: 'Счёт готов к игре.', home_sign_to_continue: 'Подпишите сообщение в кошельке.', home_connect_to_start: 'Подключитесь, пополните баланс и играйте.', home_step_connect: 'Подключить', home_step_deposit: 'Пополнить', home_step_play: 'Играть', home_games_kicker: 'ОРИГИНАЛЬНЫЕ ИГРЫ', home_games_title: 'Выберите игру', home_view_all: 'Все игры', home_sports_title: 'Рынки меняются. Будьте готовы.', home_sports_description: 'Изучайте спортивные рынки, одиночные ставки и экспрессы.', home_browse_markets: 'Открыть рынки', home_fairness_kicker: 'ПРОВЕРЯЕМАЯ ИГРА', home_fairness_title: 'Честно по дизайну', home_fairness_description: 'Каждая игра содержит проверяемое доказательство честности.', home_account_kicker: 'КАБИНЕТ ИГРОКА', home_account_title: 'История и настройки', home_account_description: 'Управляйте профилем, избранным и историей ставок.', home_open_account: 'Открыть счёт', game_crash: 'CRASH', desc_crash: 'Следите за множителем', game_limbo: 'LIMBO', desc_limbo: 'Задайте цель', game_blackjack: 'BLACKJACK', desc_blackjack: 'Победите дилера', home_fair_badge: 'Проверяемая честность', home_sports_label: 'Sportsbook', home_account_label: 'КАБИНЕТ ИГРОКА' },
+  zh: { hero_description: '畅玩原创游戏，关注体育市场，并使用简单的 USDC 余额。', home_open_sports: '打开体育博彩', home_open_casino: '探索赌场', home_originals: '原创游戏', home_currency: '记账单位', home_play_anytime: '随时畅玩', home_account: '你的账户', home_ready: '随时准备就绪', home_account_link: '账户', home_authenticated: '你的账户已准备好。', home_sign_to_continue: '请在钱包中签名以继续。', home_connect_to_start: '连接钱包、充值并开始游戏。', home_step_connect: '连接', home_step_deposit: '充值', home_step_play: '开始游戏', home_games_kicker: '赌场原创游戏', home_games_title: '选择游戏', home_view_all: '查看全部游戏', home_sports_title: '市场瞬息万变，做好准备。', home_sports_description: '探索体育市场、单注和串关。', home_browse_markets: '浏览市场', home_fairness_kicker: '可验证游戏', home_fairness_title: '公平设计', home_fairness_description: '每场游戏都包含可独立验证的公平性证明。', home_account_kicker: '玩家中心', home_account_title: '历史记录与偏好', home_account_description: '在安全账户中管理个人资料、收藏和投注记录。', home_open_account: '打开账户', game_crash: 'CRASH', desc_crash: '追逐倍数', game_limbo: 'LIMBO', desc_limbo: '设定目标', game_blackjack: 'BLACKJACK', desc_blackjack: '击败庄家', home_fair_badge: '公平可验证', home_sports_label: '体育博彩', home_account_label: '玩家中心' },
+  hi: { hero_description: 'Originals खेलें, खेल बाज़ार देखें और एक सरल USDC बैलेंस रखें।', home_open_sports: 'स्पोर्ट्सबुक खोलें', home_open_casino: 'कैसीनो देखें', home_originals: 'ओरिजिनल गेम्स', home_currency: 'लेखा इकाई', home_play_anytime: 'कभी भी खेलें', home_account: 'आपका खाता', home_ready: 'आप तैयार हैं', home_account_link: 'खाता', home_authenticated: 'आपका खाता खेलने के लिए तैयार है।', home_sign_to_continue: 'जारी रखने के लिए वॉलेट संदेश साइन करें।', home_connect_to_start: 'कनेक्ट करें, जमा करें और खेलें।', home_step_connect: 'कनेक्ट', home_step_deposit: 'जमा', home_step_play: 'खेलें', home_games_kicker: 'कैसीनो ओरिजिनल्स', home_games_title: 'अपना गेम चुनें', home_view_all: 'सभी गेम देखें', home_sports_title: 'बाज़ार बदलते हैं। तैयार रहें।', home_sports_description: 'स्पोर्ट्स मार्केट, सिंगल और कंबिनेशन बेट देखें।', home_browse_markets: 'मार्केट देखें', home_fairness_kicker: 'सत्यापित खेल', home_fairness_title: 'डिज़ाइन से निष्पक्ष', home_fairness_description: 'हर गेम में स्वतंत्र रूप से सत्यापित fairness proof है।', home_account_kicker: 'प्लेयर हब', home_account_title: 'इतिहास और पसंद', home_account_description: 'प्रोफ़ाइल, पसंदीदा और बेट इतिहास प्रबंधित करें।', home_open_account: 'खाता खोलें', game_crash: 'CRASH', desc_crash: 'मल्टीप्लायर के साथ खेलें', game_limbo: 'LIMBO', desc_limbo: 'अपना लक्ष्य तय करें', game_blackjack: 'BLACKJACK', desc_blackjack: 'डीलर को हराएं', home_fair_badge: 'सत्यापित निष्पक्षता', home_sports_label: 'स्पोर्ट्सबुक', home_account_label: 'प्लेयर हब' }
+};
+
 export const useUIStore = create<UIState>((set, get) => ({
   language: 'en',
   setLanguage: (lang) => set({ language: lang }),
   t: (key) => {
     const lang = get().language;
-    // Fallback para inglês se a chave não existir na língua escolhida
-    // @ts-ignore
-    return translations[lang]?.[key] || translations['en']?.[key] || key;
+    const locale = translations[lang] as Record<string, string>;
+    const english = translations.en as Record<string, string>;
+    return locale?.[key] || homeTranslations[lang]?.[key] || english?.[key] || homeTranslations.en?.[key] || key;
   }
 }));

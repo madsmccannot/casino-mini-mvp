@@ -91,18 +91,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
          <div className="flex items-center gap-3 md:gap-6">
             {/* BALANCE */}
-            <div className="hidden md:flex flex-col items-end mr-2 group">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5 group-hover:text-blue-400 transition-colors">{t('bankroll_label')}</span>
-                <div className="flex items-center gap-3 bg-[#0c0f17]/50 px-3 py-1.5 rounded-lg border border-white/5 hover:border-white/10 transition-all">
-                   <span className="font-mono text-emerald-400 font-bold text-lg drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
-                       ${balance.toFixed(2)}
-                   </span>
-                   <div className="h-4 w-px bg-white/10 mx-1"></div>
-                   <div className="flex gap-1">
-                       <button onClick={() => setIsDepositOpen(true)} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs w-6 h-6 rounded flex items-center justify-center border border-emerald-500/20 hover:border-emerald-500/40 transition-all font-bold active:scale-95">+</button>
-                       <button onClick={() => setIsWithdrawOpen(true)} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs w-6 h-6 rounded flex items-center justify-center border border-red-500/20 hover:border-red-500/40 transition-all font-bold active:scale-95">-</button>
-                   </div>
-                </div>
+            <div className="hidden items-center gap-2 rounded-xl border border-white/10 bg-[#0c0f17]/70 px-3 py-1.5 md:flex">
+                <div className="pr-2"><span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{t('balance_label')}</span><span className="font-mono text-sm font-extrabold text-white">${balance.toFixed(2)} <span className="text-[10px] text-slate-500">USDC</span></span></div>
+                <div className="h-7 w-px bg-white/10" />
+                <button aria-label={t('btn_deposit')} onClick={() => setIsDepositOpen(true)} className="rounded-lg bg-emerald-500/15 px-2.5 py-1.5 text-xs font-extrabold text-emerald-300 transition hover:bg-emerald-500/25">+</button>
+                <button aria-label={t('btn_withdraw')} onClick={() => setIsWithdrawOpen(true)} className="rounded-lg bg-white/5 px-2.5 py-1.5 text-xs font-extrabold text-slate-400 transition hover:bg-white/10 hover:text-white">−</button>
             </div>
 
             {/* IDIOMA */}
